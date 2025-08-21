@@ -1,0 +1,21 @@
+services:
+  app:
+    build: ../
+    ports:
+      - 8088:8088
+
+  proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.11.0
+    ports:
+      - 8089:8089
+    command: --config=/etc/oauth2-proxy.cfg
+    volumes:
+      - type: bind
+        source: ./oauth2-proxy.cfg
+        target: /etc/oauth2-proxy.cfg
+        read_only: true
+    environment:
+      # Pull from shell
+      - OAUTH2_PROXY_CLIENT_ID
+      - OAUTH2_PROXY_CLIENT_SECRET
+      - OAUTH2_PROXY_COOKIE_SECRET=da327d88be1c06bb4b62e19dc2208f15

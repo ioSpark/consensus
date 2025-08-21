@@ -1,0 +1,113 @@
+package http
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"consensus/app"
+	"consensus/html"
+
+	"github.com/go-chi/chi/v5"
+)
+
+func pointTicketHandler(w http.ResponseWriter, r *http.Request) {
+	value, err := strconv.ParseInt(chi.URLParam(r, "value"), 10, 64)
+	if err != nil {
+		// TODO: Return HTMX error
+		http.Error(
+			w,
+			fmt.Sprintf("point value is not an integer: %s", err),
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	user := r.Context().Value(contextUser).(app.User)
+	ticket := r.Context().Value(contextTicket).(*app.Ticket)
+
+	// TODO: Is converting from int64 to int like this safe? (probably)
+	err = ticket.Point(user, int(value))
+	if err == app.ErrInvalidPoint {
+		http.Error(
+			w,
+			fmt.Sprintf("invalid point value %d", value),
+			http.StatusBadRequest,
+		)
+		return
+	} else if err != nil {
+		panic(err)
+	}
+
+	err = html.TicketRow(w, ticket, user)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func revealPointsHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(contextUser).(app.User)
+	ticket := r.Context().Value(contextTicket).(*app.Ticket)
+
+	// TODO: Return HTMX error
+	err := ticket.Reveal(user)
+	if err == app.ErrUserCantReveal {
+		http.Error(
+			w,
+			"user did not raise ticket, cannot reveal",
+			http.StatusUnauthorized,
+		)
+		return
+	} else if err == app.ErrCantRevalNoVotes {
+		http.Error(w, "no votes on ticket, cannot reveal", http.StatusBadRequest)
+		return
+	} else if err != nil {
+		panic(err)
+	}
+
+	// The row will be deleted by providing no content.
+	// This event triggers the client to reload the revealed table contents
+	w.Header().Add("HX-Trigger", "newRevealed")
+}
+
+func ticketCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		name := strings.TrimSpace(chi.URLParam(r, "name"))
+
+		// TODO: Determine if this is possible
+		if name == "" {
+			// TODO: Probably 404?
+			http.Error(w, "ticket name was blank", http.StatusBadRequest)
+			return
+		}
+
+		t, err := app.GetTicket(name)
+		if err == app.ErrTicketNotExist {
+			http.Error(
+				w,
+				fmt.Sprintf("ticket %s not found", name),
+				http.StatusBadRequest,
+			)
+			return
+		} else if err != nil {
+			// TODO: Return error
+			panic(err)
+		}
+
+		ctx := context.WithValue(r.Context(), contextTicket, t)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func Ticket(r chi.Router) {
+	r.Route("/ticket/{name}", func(r chi.Router) {
+		r.Use(userCtx)
+		r.Use(ticketCtx)
+
+		r.Put("/point/{value}", pointTicketHandler)
+		r.Post("/reveal", revealPointsHandler)
+		// r.Delete("/", deleteTicketHandler)
+	})
+}

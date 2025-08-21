@@ -1,0 +1,24 @@
+version: "2"
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    gci:
+      sections:
+        - standard
+        - localmodule
+        - default
+        - blank
+        - dot
+        - alias
+      custom-order: true
+    gofumpt:
+      extra-rules: true
+      module-path: consensus
+    golines:
+      max-len: 88

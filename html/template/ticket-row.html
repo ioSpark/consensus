@@ -1,0 +1,69 @@
+<tr
+  class="hover:bg-linear-to-r bg-emerald-200 hover:from-emerald-400 hover:to-teal-500"
+>
+  <td class="px-1">
+    <a class="text-blue-600 underline" target="_blank" href="{{ .Ticket.Link }}"
+      >{{ .Ticket.Name }}</a
+    >
+  </td>
+  <td
+    class="{{ if eq .Ticket.RaisedBy.Name .User.Name }}
+      font-bold
+    {{ end }} px-1"
+  >
+    <span class="inline-flex items-baseline">
+      <img
+        class="mx-1 size-5 self-center rounded-full"
+        src="https://github.com/{{ .Ticket.RaisedBy.Name }}.png?size=20"
+      />
+      <span>{{ .Ticket.RaisedBy.Name }}</span>
+    </span>
+  </td>
+  <td class="px-1">
+    <div class="flex justify-center gap-1">
+      {{- range pointValues }}
+        <button
+          hx-put="/ticket/{{ $.Ticket.Name }}/point/{{ . }}"
+          hx-target="closest tr"
+          hx-swap="outerHTML"
+          {{ $v := index $.Ticket.Points $.User }}
+          class="{{- if eq $v.Point . }}
+            bg-emerald-500
+          {{- else }}
+            cursor-pointer bg-emerald-50 hover:bg-slate-300
+          {{- end }} rounded px-1 font-mono"
+        >
+          {{- . -}}
+        </button>
+      {{- end }}
+    </div>
+  </td>
+  <td class="flex items-center gap-1 px-1">
+    {{ range allUsers }}
+      {{ $v := hasVoted $.Ticket . }}
+      <img
+        class="{{ if not $v }}
+          opacity-30
+        {{ end }} size-5 self-center rounded-full"
+        src="https://github.com/{{ .Name }}.png?size=20"
+      />
+    {{ end }}
+  </td>
+  <td class="px-1">
+    <button
+      {{- if eq (.Ticket.CanReveal .User) nil }}
+        hx-post="/ticket/{{ .Ticket.Name }}/reveal" hx-target="closest tr"
+        hx-swap="outerHTML"
+      {{ else }}
+        disabled
+      {{- end }}
+      class="{{- if eq (.Ticket.CanReveal .User) nil }}
+        cursor-pointer
+      {{ else }}
+        cursor-not-allowed
+      {{- end }} rounded bg-amber-100 px-1 hover:bg-amber-300 disabled:bg-slate-100 disabled:opacity-50"
+    >
+      Reveal
+    </button>
+  </td>
+</tr>

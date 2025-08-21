@@ -1,0 +1,14 @@
+{{ if . }}
+<template>
+{{- end }}
+  <div id="new-ticket" {{ if . }}hx-swap-oob="outerHTML"{{ end }} class="my-2 py-1 border-y w-full" hx-target="#tickets" hx-swap="beforeend">
+    <form hx-post="/new">
+      <h4 class="text-lg font-bold">New Ticket</h4>
+      <input class="px-1 border m-1 bg-neutral-50 focus:outline-none focus:border-emerald-500 focus:shadow-emerald-500 focus:shadow-lg/60" type="text" required placeholder="Issue Title" name="title"/>
+      <input class="px-1 border m-1 bg-neutral-50 focus:outline-none focus:border-emerald-500 focus:shadow-emerald-500 focus:shadow-lg/60" type="text" required placeholder="https://link-to-issue.example" name="link"/>
+      <button class="bg-amber-100 hover:bg-amber-300 rounded px-1 cursor-pointer">Create</button>
+    </form>
+  </div>
+{{- if . }}
+</template>
+{{ end }}

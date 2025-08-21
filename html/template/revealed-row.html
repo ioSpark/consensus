@@ -1,0 +1,52 @@
+<tr
+  class="hover:bg-linear-to-r bg-yellow-100 hover:from-yellow-200 hover:to-emerald-300"
+>
+  <td class="px-1">
+    <a class="text-blue-600 underline" target="_blank" href="{{ .Ticket.Link }}"
+      >{{ .Ticket.Name }}</a
+    >
+  </td>
+  <td
+    class="{{ if eq .Ticket.RaisedBy.Name .User.Name }}
+      font-bold
+    {{ end }} px-1"
+  >
+    <span class="inline-flex items-baseline">
+      <img
+        class="mx-1 size-5 self-center rounded-full"
+        src="https://github.com/{{ .Ticket.RaisedBy.Name }}.png?size=20"
+      />
+      <span>{{ .Ticket.RaisedBy.Name }}</span>
+    </span>
+  </td>
+  <td class="px-1">
+    {{- range sortPoints .Ticket.Points }}
+      <div class="flex justify-end gap-2">
+        <span class="inline-flex items-baseline">
+          <img
+            class="mx-1 size-5 self-center rounded-full"
+            src="https://github.com/{{ .User.Name }}.png?size=20"
+          />
+          <span
+            {{ if eq .User.Name $.User.Name }}class="font-bold"{{ end }}
+            >{{ .User.Name }}</span
+          >
+        </span>
+        <span
+          class="{{ if eq .User.Name $.User.Name }}font-bold{{ end }} font-mono"
+          >{{ .Point }}</span
+        >
+      </div>
+    {{- end }}
+  </td>
+  <td class="px-1 font-mono">
+    {{- .Ticket.Average -}}
+  </td>
+  <td class="px-1 font-mono">
+    <div class="flex place-content-center gap-1">
+      {{ range .Ticket.Mode }}
+        <span>{{ . }}</span>
+      {{ end }}
+    </div>
+  </td>
+</tr>

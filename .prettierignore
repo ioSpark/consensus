@@ -1,0 +1,5 @@
+# Go plugin errors on this file. Probably due to templating the root?
+# https://github.com/NiklasPor/prettier-plugin-go-template/issues/95
+# https://github.com/NiklasPor/prettier-plugin-go-template/issues/116
+# https://github.com/NiklasPor/prettier-plugin-go-template/issues/120
+html/template/new-input.html
