@@ -21,7 +21,7 @@ tailwind:
 
 .PHONY: tailwind-watch
 tailwind-watch:
-	tailwindcss -i config.css -o static/style.css --watch
+	tailwindcss -i config.css -o http/static/style.css --watch
 
 .PHONY: build-binary
 build:
