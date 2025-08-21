@@ -5,6 +5,7 @@ import (
 	"errors"
 	"html/template"
 	"maps"
+	"net/url"
 	"slices"
 
 	"consensus/app"
@@ -55,6 +56,7 @@ func templateHelpers() template.FuncMap {
 			})
 			return points
 		},
+		"urlPathEscape": func(s string) string { return url.PathEscape(s) },
 	}
 }
 

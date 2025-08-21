@@ -20,7 +20,6 @@ import (
 // TODO: Question type.
 // TODO: voters is not padded. i.e. if we live-refresh and a user logs in, it could move buttons
 // TODO: tooltip over avg/mean to explain how they work.
-// TODO: Bug: Tickets with brackets are not supported
 // TODO: Add tests for all kinds of characters.
 // TODO: A way to clear/remove tickets
 // TODO: A way to edit tickets

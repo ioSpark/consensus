@@ -23,7 +23,7 @@
     <div class="flex justify-center gap-1">
       {{- range pointValues }}
         <button
-          hx-put="/ticket/{{ $.Ticket.Name }}/point/{{ . }}"
+          hx-put="/ticket/{{ $.Ticket.Name | urlPathEscape }}/point/{{ . }}"
           hx-target="closest tr"
           hx-swap="outerHTML"
           {{ $v := index $.Ticket.Points $.User }}
@@ -52,7 +52,7 @@
   <td class="px-1">
     <button
       {{- if eq (.Ticket.CanReveal .User) nil }}
-        hx-post="/ticket/{{ .Ticket.Name }}/reveal" hx-target="closest tr"
+        hx-post="/ticket/{{ .Ticket.Name | urlPathEscape }}/reveal" hx-target="closest tr"
         hx-swap="outerHTML"
       {{ else }}
         disabled
