@@ -43,7 +43,6 @@ func templateHelpers() template.FuncMap {
 			}
 			return false
 		},
-		"allUsers": func() []app.User { return app.AllUsers() },
 		"sortPoints": func(p map[app.User]app.Point) []app.Point {
 			points := slices.Collect(maps.Values(p))
 			slices.SortStableFunc(points, func(a, b app.Point) int {

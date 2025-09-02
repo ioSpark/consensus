@@ -6,13 +6,15 @@ import (
 	"consensus/app"
 )
 
-func Index(w io.Writer, user app.User, tickets []*app.Ticket) error {
+func Index(w io.Writer, user app.User, tickets []*app.Ticket, users []*app.User) error {
 	data := struct {
-		User    app.User
-		Tickets []*app.Ticket
+		User     app.User
+		Tickets  []*app.Ticket
+		AllUsers []*app.User
 	}{
-		User:    user,
-		Tickets: tickets,
+		User:     user,
+		Tickets:  tickets,
+		AllUsers: users,
 	}
 
 	err := templates.ExecuteTemplate(w, "index.html", data)

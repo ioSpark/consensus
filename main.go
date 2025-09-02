@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 
+	"consensus/app"
 	"consensus/http"
 
 	"golang.org/x/sync/errgroup"
@@ -24,6 +26,119 @@ import (
 // TODO: A way to clear/remove tickets
 // TODO: A way to edit tickets
 // TODO: Simple way to test without oauth2 proxy
+// TODO: Review and use more idiomatic error handling
+// TODO: Show errors to users, instead of failing silently
+// TODO: Change some variable/struct arg/field names (e.g. ticket name -> title,
+//	link -> URL)
+// TODO: Generally remove all of these TODO's
+// TODO: URL validation
+
+// TODO: Unsafe, temporary in-memory "storage" layer. Could be coded better
+type storage struct {
+	tickets []*app.Ticket
+	users   []*app.User
+}
+
+func (s *storage) Tickets() []*app.Ticket {
+	return s.tickets
+}
+
+func (s *storage) Ticket(name string) (*app.Ticket, error) {
+	for _, t := range s.Tickets() {
+		if t.Name == name {
+			return t, nil
+		}
+	}
+	return nil, app.ErrTicketNotExist
+}
+
+func (s *storage) CreateTicket(t app.Ticket) error {
+	_, err := s.Ticket(t.Name)
+	if err != app.ErrTicketNotExist && err != nil {
+		panic(err)
+	} else if err == nil {
+		return app.ErrTicketAlreadyExists
+	}
+
+	s.tickets = append(s.tickets, &t)
+	return nil
+}
+
+func (s *storage) DeleteTicket(name string) error {
+	_, err := s.Ticket(name)
+	if err != nil && err == app.ErrTicketNotExist {
+		panic(err)
+	}
+
+	// Not the best way to do this
+	s.tickets = slices.DeleteFunc(s.tickets, func(t *app.Ticket) bool {
+		return t.Name == name
+	})
+
+	return nil
+}
+
+func (s *storage) UpdateTicket(t app.Ticket) error {
+	_, err := s.Ticket(t.Name)
+	if err != nil && err == app.ErrTicketNotExist {
+		panic(err)
+	}
+
+	err = s.DeleteTicket(t.Name)
+	if err != nil {
+		panic(err)
+	}
+
+	err = s.CreateTicket(t)
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+}
+
+func (s *storage) Users() []*app.User {
+	return s.users
+}
+
+func (s *storage) User(name string) (*app.User, error) {
+	for _, u := range s.Users() {
+		if u.Name == name {
+			return u, nil
+		}
+	}
+	return nil, app.ErrUserNotExist
+}
+
+func (s *storage) CreateUser(u app.User) error {
+	_, err := s.User(u.Name)
+	if err != app.ErrUserNotExist && err != nil {
+		panic(err)
+	} else if err == nil {
+		return app.ErrUserAlreadyExists
+	}
+
+	s.users = append(s.users, &u)
+	return nil
+}
+
+func (s *storage) DeleteUser(name string) error {
+	_, err := s.User(name)
+	if err != nil && err == app.ErrUserNotExist {
+		panic(err)
+	}
+
+	// Not the best way to do this
+	s.users = slices.DeleteFunc(s.users, func(u *app.User) bool {
+		return u.Name == name
+	})
+
+	return nil
+}
+
+func newStorage() *storage {
+	return &storage{}
+}
 
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
@@ -46,8 +161,11 @@ func start(log *slog.Logger) error {
 	)
 	defer stop()
 
+	s := newStorage()
+
 	server := http.NewServer(http.NewServerOptions{
-		Log: log,
+		Log:     log,
+		Storage: s,
 	})
 
 	eg, ctx := errgroup.WithContext(ctx)

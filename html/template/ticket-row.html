@@ -39,7 +39,7 @@
     </div>
   </td>
   <td class="flex items-center gap-1 px-1">
-    {{ range allUsers }}
+    {{ range .AllUsers }}
       {{ $v := hasVoted $.Ticket . }}
       <img
         class="{{ if not $v }}
@@ -52,8 +52,8 @@
   <td class="px-1">
     <button
       {{- if eq (.Ticket.CanReveal .User) nil }}
-        hx-post="/ticket/{{ .Ticket.Name | urlPathEscape }}/reveal" hx-target="closest tr"
-        hx-swap="outerHTML"
+        hx-post="/ticket/{{ .Ticket.Name | urlPathEscape }}/reveal"
+        hx-target="closest tr" hx-swap="outerHTML"
       {{ else }}
         disabled
       {{- end }}

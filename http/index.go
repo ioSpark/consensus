@@ -11,20 +11,20 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func indexHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	user := r.Context().Value(contextUser).(app.User)
 
-	err := html.Index(w, user, app.AllTickets())
+	err := html.Index(w, user, s.Tickets(), s.Users())
 	if err != nil {
 		panic(err)
 	}
 }
 
 // Return all revealed tickets as rows
-func revealedHandler(w http.ResponseWriter, r *http.Request) {
+func revealedHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	user := r.Context().Value(contextUser).(app.User)
 
-	for _, t := range app.AllTickets() {
+	for _, t := range s.Tickets() {
 		if !t.Revealed {
 			continue
 		}
@@ -36,7 +36,7 @@ func revealedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newTicketHandler(w http.ResponseWriter, r *http.Request) {
+func newTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	title := strings.TrimSpace(r.FormValue("title"))
 	link := strings.TrimSpace(r.FormValue("link"))
 	if title == "" || link == "" {
@@ -46,7 +46,8 @@ func newTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := r.Context().Value(contextUser).(app.User)
-	t, err := app.NewTicket(title, link, user)
+	t := app.NewTicket(title, link, user)
+	err := s.CreateTicket(t)
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		http.Error(w, "ticket with name already exists", http.StatusBadRequest)
@@ -56,7 +57,7 @@ func newTicketHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	err = html.TicketRow(w, t, user)
+	err = html.TicketRow(w, &t, user, s.Users())
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +67,7 @@ func newTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func userCtx(next http.Handler) http.Handler {
+func userCtx(s app.Storage, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		forwardedUser := r.Header.Get("X-Forwarded-User")
 		if forwardedUser == "" {
@@ -78,23 +79,29 @@ func userCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		u, err := app.GetUser(forwardedUser)
+		u, err := s.User(forwardedUser)
 		if err == app.ErrUserNotExist {
-			u = *app.NewUser(forwardedUser)
+			u = app.NewUser(forwardedUser)
+			err := s.CreateUser(*u)
+			if err != nil {
+				panic(err)
+			}
 		}
 
-		ctx := context.WithValue(r.Context(), contextUser, u)
+		ctx := context.WithValue(r.Context(), contextUser, *u)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func Index(r chi.Router) {
+func Index(r chi.Router, s app.Storage) {
 	r.Route("/", func(r chi.Router) {
-		r.Use(userCtx)
+		r.Use(func(next http.Handler) http.Handler {
+			return userCtx(s, next)
+		})
 
-		r.Get("/", indexHandler)
+		r.Get("/", provideStorage(s, indexHandler))
 
-		r.Post("/new", newTicketHandler)
-		r.Get("/revealed", revealedHandler)
+		r.Post("/new", provideStorage(s, newTicketHandler))
+		r.Get("/revealed", provideStorage(s, revealedHandler))
 	})
 }

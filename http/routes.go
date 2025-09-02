@@ -1,9 +1,22 @@
 package http
 
 import (
+	"net/http"
+
+	"consensus/app"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
+
+func provideStorage(
+	s app.Storage,
+	fn func(http.ResponseWriter, *http.Request, app.Storage),
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fn(w, r, s)
+	}
+}
 
 func (s *Server) setupRoutes() {
 	s.mux.Group(func(r chi.Router) {
@@ -16,7 +29,7 @@ func (s *Server) setupRoutes() {
 
 		Health(r)
 
-		Index(r)
-		Ticket(r)
+		Index(r, s.storage)
+		Ticket(r, s.storage)
 	})
 }

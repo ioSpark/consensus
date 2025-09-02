@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"consensus/app"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -19,13 +21,15 @@ const (
 )
 
 type Server struct {
-	log    *slog.Logger
-	mux    chi.Router
-	server *http.Server
+	log     *slog.Logger
+	mux     chi.Router
+	server  *http.Server
+	storage app.Storage
 }
 
 type NewServerOptions struct {
-	Log *slog.Logger
+	Log     *slog.Logger
+	Storage app.Storage
 }
 
 func NewServer(opts NewServerOptions) *Server {
@@ -36,8 +40,9 @@ func NewServer(opts NewServerOptions) *Server {
 	mux := chi.NewRouter()
 
 	return &Server{
-		log: opts.Log,
-		mux: mux,
+		log:     opts.Log,
+		mux:     mux,
+		storage: opts.Storage,
 		server: &http.Server{
 			Addr:              ":8088",
 			Handler:           mux,

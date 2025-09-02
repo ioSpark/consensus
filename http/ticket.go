@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func pointTicketHandler(w http.ResponseWriter, r *http.Request) {
+func pointTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	value, err := strconv.ParseInt(chi.URLParam(r, "value"), 10, 64)
 	if err != nil {
 		// TODO: Return HTMX error
@@ -41,13 +41,18 @@ func pointTicketHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	err = html.TicketRow(w, ticket, user)
+	err = s.UpdateTicket(*ticket)
+	if err != nil {
+		panic(err)
+	}
+
+	err = html.TicketRow(w, ticket, user, s.Users())
 	if err != nil {
 		panic(err)
 	}
 }
 
-func revealPointsHandler(w http.ResponseWriter, r *http.Request) {
+func revealPointsHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	user := r.Context().Value(contextUser).(app.User)
 	ticket := r.Context().Value(contextTicket).(*app.Ticket)
 
@@ -60,10 +65,15 @@ func revealPointsHandler(w http.ResponseWriter, r *http.Request) {
 			http.StatusUnauthorized,
 		)
 		return
-	} else if err == app.ErrCantRevalNoVotes {
+	} else if err == app.ErrCantReveallNoVotes {
 		http.Error(w, "no votes on ticket, cannot reveal", http.StatusBadRequest)
 		return
 	} else if err != nil {
+		panic(err)
+	}
+
+	err = s.UpdateTicket(*ticket)
+	if err != nil {
 		panic(err)
 	}
 
@@ -72,7 +82,7 @@ func revealPointsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("HX-Trigger", "newRevealed")
 }
 
-func ticketCtx(next http.Handler) http.Handler {
+func ticketCtx(s app.Storage, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		name := strings.TrimSpace(chi.URLParam(r, "name"))
 
@@ -83,7 +93,7 @@ func ticketCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		t, err := app.GetTicket(name)
+		t, err := s.Ticket(name)
 		if err == app.ErrTicketNotExist {
 			http.Error(
 				w,
@@ -101,13 +111,17 @@ func ticketCtx(next http.Handler) http.Handler {
 	})
 }
 
-func Ticket(r chi.Router) {
+func Ticket(r chi.Router, s app.Storage) {
 	r.Route("/ticket/{name}", func(r chi.Router) {
-		r.Use(userCtx)
-		r.Use(ticketCtx)
+		r.Use(func(next http.Handler) http.Handler {
+			return userCtx(s, next)
+		})
+		r.Use(func(next http.Handler) http.Handler {
+			return ticketCtx(s, next)
+		})
 
-		r.Put("/point/{value}", pointTicketHandler)
-		r.Post("/reveal", revealPointsHandler)
+		r.Put("/point/{value}", provideStorage(s, pointTicketHandler))
+		r.Post("/reveal", provideStorage(s, revealPointsHandler))
 		// r.Delete("/", deleteTicketHandler)
 	})
 }

@@ -6,13 +6,15 @@ import (
 	"consensus/app"
 )
 
-func TicketRow(w io.Writer, t *app.Ticket, u app.User) error {
+func TicketRow(w io.Writer, t *app.Ticket, u app.User, users []*app.User) error {
 	data := struct {
-		Ticket *app.Ticket
-		User   app.User
+		Ticket   *app.Ticket
+		User     app.User
+		AllUsers []*app.User
 	}{
-		Ticket: t,
-		User:   u,
+		Ticket:   t,
+		User:     u,
+		AllUsers: users,
 	}
 
 	err := templates.ExecuteTemplate(w, "ticket-row.html", data)

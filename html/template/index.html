@@ -48,7 +48,7 @@
         <tbody id="tickets">
           {{ range .Tickets }}
             {{ if not .Revealed }}
-              {{ template "ticket-row.html" dict "Ticket" . "User" $.User }}
+              {{ template "ticket-row.html" dict "Ticket" . "User" $.User "AllUsers" $.AllUsers }}
             {{ end }}
           {{ end }}
         </tbody>
