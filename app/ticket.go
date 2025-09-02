@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 )
 
@@ -75,28 +74,35 @@ func (t *Ticket) Average() float64 {
 	return float64(total) / float64(len(t.Points))
 }
 
-// Most common value
-// TODO: Cleanup
+// Mode returns the most frequent point values, in ascending order.
+// If there are no points, it returns nil.
 func (t *Ticket) Mode() []int {
-	counts := make(map[int]int, len(PointValues))
+	// Mode shouldn't be called if the ticket is not revealed (thus, must have points)
+	// but handle it anyway.
+	if len(t.Points) == 0 {
+		return nil
+	}
+
+	counts := make(map[int]int, len(t.Points))
+	maxCount := 0
+
 	for _, p := range t.Points {
-		counts[p.Point]++
-	}
-
-	reversed := make(map[int][]int, len(counts))
-	for k, v := range counts {
-		if reversed[v] == nil {
-			reversed[v] = make([]int, 0)
+		c := counts[p.Point] + 1
+		counts[p.Point] = c
+		if c > maxCount {
+			maxCount = c
 		}
-		reversed[v] = append(reversed[v], k)
 	}
 
-	ordered := slices.Collect(maps.Keys(reversed))
-	slices.Sort(ordered)
+	result := make([]int, 0)
+	for k, c := range counts {
+		if c == maxCount {
+			result = append(result, k)
+		}
+	}
 
-	slices.Sort(reversed[ordered[0]])
-
-	return reversed[ordered[0]]
+	slices.Sort(result)
+	return result
 }
 
 func NewTicket(name, link string, reporter User) Ticket {
