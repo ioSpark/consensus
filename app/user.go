@@ -21,6 +21,7 @@ func NewUser(name string) *User {
 type UserStorage interface {
 	User(name string) (*User, error)
 	Users() []*User
+	// TODO: Should we accept parameters and create our own struct?
 	CreateUser(user User) error
 	DeleteUser(name string) error
 }

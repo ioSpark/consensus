@@ -84,20 +84,30 @@ func revealPointsHandler(w http.ResponseWriter, r *http.Request, s app.Storage) 
 
 func ticketCtx(s app.Storage, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		name := strings.TrimSpace(chi.URLParam(r, "name"))
+		IDstring := strings.TrimSpace(chi.URLParam(r, "ID"))
 
 		// TODO: Determine if this is possible
-		if name == "" {
+		if IDstring == "" {
 			// TODO: Probably 404?
 			http.Error(w, "ticket name was blank", http.StatusBadRequest)
 			return
 		}
 
-		t, err := s.Ticket(name)
+		ID, err := strconv.Atoi(IDstring)
+		if err != nil {
+			http.Error(
+				w,
+				fmt.Sprintf("ticket ID was not integer: %s", err),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		t, err := s.Ticket(ID)
 		if err == app.ErrTicketNotExist {
 			http.Error(
 				w,
-				fmt.Sprintf("ticket %s not found", name),
+				fmt.Sprintf("ticket %d not found", ID),
 				http.StatusBadRequest,
 			)
 			return
@@ -112,7 +122,7 @@ func ticketCtx(s app.Storage, next http.Handler) http.Handler {
 }
 
 func Ticket(r chi.Router, s app.Storage) {
-	r.Route("/ticket/{name}", func(r chi.Router) {
+	r.Route("/ticket/{ID}", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return userCtx(s, next)
 		})

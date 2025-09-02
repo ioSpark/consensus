@@ -46,8 +46,7 @@ func newTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	}
 
 	user := r.Context().Value(contextUser).(app.User)
-	t := app.NewTicket(title, link, user)
-	err := s.CreateTicket(t)
+	t, err := s.CreateTicket(app.NewTicket(title, link, user))
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		http.Error(w, "ticket with name already exists", http.StatusBadRequest)
@@ -57,7 +56,7 @@ func newTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 		panic(err)
 	}
 
-	err = html.TicketRow(w, &t, user, s.Users())
+	err = html.TicketRow(w, t, user, s.Users())
 	if err != nil {
 		panic(err)
 	}

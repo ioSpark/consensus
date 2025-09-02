@@ -15,14 +15,17 @@ var (
 
 // TODO: Determine what should be pointers
 type TicketStorage interface {
-	Ticket(title string) (*Ticket, error)
+	Ticket(ID int) (*Ticket, error)
+	TicketByName(name string) (*Ticket, error)
 	Tickets() []*Ticket
-	CreateTicket(t Ticket) error
-	DeleteTicket(name string) error
+	// TODO: Should we accept parameters and create our own struct?
+	CreateTicket(t Ticket) (*Ticket, error)
+	DeleteTicket(ID int) error
 	UpdateTicket(t Ticket) error
 }
 
 type Ticket struct {
+	ID       int
 	Name     string
 	Link     string
 	RaisedBy User
