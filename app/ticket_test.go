@@ -66,3 +66,20 @@ func TestMode(t *testing.T) {
 		}
 	}
 }
+
+func TestVoted(t *testing.T) {
+	u := app.NewUser("test")
+	ticket := app.NewTicket("a", "b", *u)
+
+	if ticket.Voted(*u) != false {
+		t.Error("voted is True, but we haven't voted")
+	}
+
+	err := ticket.Point(*u, 2)
+	if err != nil {
+		t.Errorf("unexpected error while pointing: %s", err)
+	}
+	if ticket.Voted(*u) != true {
+		t.Error("voted is False, but we have voted")
+	}
+}

@@ -7,7 +7,6 @@ test:
 
 .PHONY: fmt
 fmt:
-	pre-commit run format-html
 	pre-commit run golangci-lint-fmt
 
 .PHONY: lint

@@ -11,18 +11,24 @@ import (
 	"consensus/html"
 
 	"github.com/go-chi/chi/v5"
+
+	g "maragu.dev/gomponents"
 )
 
-func pointTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
+func pointTicketHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	s app.Storage,
+) (g.Node, error) {
 	value, err := strconv.ParseInt(chi.URLParam(r, "value"), 10, 64)
 	if err != nil {
 		// TODO: Return HTMX error
-		http.Error(
-			w,
-			fmt.Sprintf("point value is not an integer: %s", err),
-			http.StatusBadRequest,
-		)
-		return
+		return g.Textf(
+				"point value is not an integer: %s",
+				err,
+			), httpError{
+				http.StatusBadRequest,
+			}
 	}
 
 	user := r.Context().Value(contextUser).(app.User)
@@ -31,12 +37,12 @@ func pointTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	// TODO: Is converting from int64 to int like this safe? (probably)
 	err = ticket.Point(user, int(value))
 	if err == app.ErrInvalidPoint {
-		http.Error(
-			w,
-			fmt.Sprintf("invalid point value %d", value),
-			http.StatusBadRequest,
-		)
-		return
+		return g.Textf(
+				"invalid point value %d",
+				value,
+			), httpError{
+				http.StatusBadRequest,
+			}
 	} else if err != nil {
 		panic(err)
 	}
@@ -46,28 +52,27 @@ func pointTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 		panic(err)
 	}
 
-	err = html.TicketRow(w, ticket, user, s.Users())
-	if err != nil {
-		panic(err)
-	}
+	return html.TicketRow(ticket, user, s.Users()), nil
 }
 
-func revealPointsHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
+func revealPointsHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	s app.Storage,
+) (g.Node, error) {
 	user := r.Context().Value(contextUser).(app.User)
 	ticket := r.Context().Value(contextTicket).(*app.Ticket)
 
 	// TODO: Return HTMX error
 	err := ticket.Reveal(user)
 	if err == app.ErrUserCantReveal {
-		http.Error(
-			w,
-			"user did not raise ticket, cannot reveal",
-			http.StatusUnauthorized,
-		)
-		return
+		return g.Text(
+				"user did not raise ticket, cannot reveal",
+			), httpError{
+				http.StatusUnauthorized,
+			}
 	} else if err == app.ErrCantReveallNoVotes {
-		http.Error(w, "no votes on ticket, cannot reveal", http.StatusBadRequest)
-		return
+		return g.Text("no vots on ticket, cannot reveal"), httpError{http.StatusBadRequest}
 	} else if err != nil {
 		panic(err)
 	}
@@ -80,6 +85,7 @@ func revealPointsHandler(w http.ResponseWriter, r *http.Request, s app.Storage) 
 	// The row will be deleted by providing no content.
 	// This event triggers the client to reload the revealed table contents
 	w.Header().Add("HX-Trigger", "newRevealed")
+	return g.Group{}, nil
 }
 
 func ticketCtx(s app.Storage, next http.Handler) http.Handler {

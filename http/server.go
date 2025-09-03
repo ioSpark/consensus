@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -19,6 +20,20 @@ const (
 	contextUser contextValues = iota
 	contextTicket
 )
+
+// Satisfying gomponents http.errorWithStatusCode interface
+type httpError struct {
+	statusCode int
+}
+
+func (h httpError) Error() string {
+	// Could maybe provide more info? but might never be seen anywhere.
+	return fmt.Sprintf("%d", h.statusCode)
+}
+
+func (h httpError) StatusCode() int {
+	return h.statusCode
+}
 
 type Server struct {
 	log     *slog.Logger

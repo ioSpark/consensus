@@ -105,6 +105,15 @@ func (t *Ticket) Mode() []int {
 	return result
 }
 
+func (t *Ticket) Voted(user User) bool {
+	for _, p := range t.Points {
+		if p.User.Name == user.Name {
+			return true
+		}
+	}
+	return false
+}
+
 func NewTicket(name, link string, reporter User) Ticket {
 	return Ticket{
 		Name:     name,

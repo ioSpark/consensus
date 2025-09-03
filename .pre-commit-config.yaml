@@ -21,11 +21,6 @@ repos:
     language: system
     entry: tailwindcss -i config.css -o html/static/style.css
     pass_filenames: false
-  - id: format-html
-    name: Format HTML
-    language: system
-    entry: prettier -w html/template/*
-    pass_filenames: false
 - repo: https://github.com/golangci/golangci-lint
   rev: v2.3.1
   hooks:

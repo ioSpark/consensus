@@ -9,69 +9,73 @@ import (
 	"consensus/html"
 
 	"github.com/go-chi/chi/v5"
+
+	g "maragu.dev/gomponents"
 )
 
-func indexHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
+func indexHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	s app.Storage,
+) (g.Node, error) {
 	user := r.Context().Value(contextUser).(app.User)
-
-	err := html.Index(w, user, s.Tickets(), s.Users())
-	if err != nil {
-		panic(err)
-	}
+	return html.Index(html.PageProps{}, user, s.Tickets(), s.Users()), nil
 }
 
 // Return all revealed tickets as rows
-func revealedHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
+func revealedHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	s app.Storage,
+) (g.Node, error) {
 	user := r.Context().Value(contextUser).(app.User)
 
 	// Return just the table if we're a HTMX request
 	if r.Header.Get("HX-Request") == "true" {
+		group := g.Group{}
 		for _, t := range s.Tickets() {
 			if !t.Revealed {
 				continue
 			}
+			group = append(group, html.RevealedRow(*t, user))
 
-			err := html.RevealedRow(w, t, user)
-			if err != nil {
-				panic(err)
-			}
 		}
-	} else {
-		err := html.Revealed(w, user, s.Tickets())
-		if err != nil {
-			panic(err)
-		}
+		return group, nil
 	}
+	return html.Revealed(html.PageProps{}, user, s.Tickets()), nil
 }
 
-func newTicketHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
+func newTicketHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	s app.Storage,
+) (g.Node, error) {
 	title := strings.TrimSpace(r.FormValue("title"))
 	link := strings.TrimSpace(r.FormValue("link"))
 	if title == "" || link == "" {
 		// TODO: Return HTMX error
-		http.Error(w, "title or link were blank", http.StatusBadRequest)
-		return
+		return g.Text("title or link were blank"), httpError{http.StatusBadRequest}
 	}
 
 	user := r.Context().Value(contextUser).(app.User)
 	t, err := s.CreateTicket(app.NewTicket(title, link, user))
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
-		http.Error(w, "ticket with name already exists", http.StatusBadRequest)
-		return
+		// TODO: Might not need to exist, since all tickets are based on ID
+		return g.Text(
+				"ticket with name already exists",
+			), httpError{
+				http.StatusBadRequest,
+			}
 	} else if err != nil {
 		// Only returns "already exists"
 		panic(err)
 	}
 
-	err = html.TicketRow(w, t, user, s.Users())
-	if err != nil {
-		panic(err)
-	}
-	err = html.NewTicketInput(w, true)
-	if err != nil {
-		panic(err)
-	}
+	return g.Group{
+		html.TicketRow(t, user, s.Users()),
+		html.InputRow(true),
+	}, nil
 }
 
 func userCtx(s app.Storage, next http.Handler) http.Handler {
