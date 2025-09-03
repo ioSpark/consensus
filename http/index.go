@@ -24,12 +24,20 @@ func indexHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 func revealedHandler(w http.ResponseWriter, r *http.Request, s app.Storage) {
 	user := r.Context().Value(contextUser).(app.User)
 
-	for _, t := range s.Tickets() {
-		if !t.Revealed {
-			continue
-		}
+	// Return just the table if we're a HTMX request
+	if r.Header.Get("HX-Request") == "true" {
+		for _, t := range s.Tickets() {
+			if !t.Revealed {
+				continue
+			}
 
-		err := html.RevealedRow(w, t, user)
+			err := html.RevealedRow(w, t, user)
+			if err != nil {
+				panic(err)
+			}
+		}
+	} else {
+		err := html.Revealed(w, user, s.Tickets())
 		if err != nil {
 			panic(err)
 		}

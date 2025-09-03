@@ -20,7 +20,8 @@ import (
 // TODO: The page is not live, when people vote, when new people login, when ticket is revealed
 // TODO: (perhaps) we cache the github avatars
 // TODO: New ticket section does not expand when table gets wider
-// TODO: There is no "view only" page. i.e. so that the scrum master can vote, but not reveal their own votes
+// TODO: Replace "revealed" page with some sort of way to hide voted value if user
+//	has already voted on a value. (i.e. so they can screenshare, and still participate)
 // TODO: Question type.
 // TODO: voters is not padded. i.e. if we live-refresh and a user logs in, it could move buttons
 // TODO: tooltip over avg/mean to explain how they work.

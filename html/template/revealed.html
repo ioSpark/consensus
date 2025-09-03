@@ -40,40 +40,6 @@
           <tr class="bg-emerald-400">
             <th>Ticket</th>
             <th>Reporter</th>
-            <th>Point Select</th>
-            <th>Voters</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tickets">
-          {{ range .Tickets }}
-            {{ if not .Revealed }}
-              {{ template "ticket-row.html" dict "Ticket" . "User" $.User "AllUsers" $.AllUsers }}
-            {{ end }}
-          {{ end }}
-        </tbody>
-      </table>
-
-      {{ template "new-input.html" }}
-
-
-      <a href="/revealed">
-        <button
-          class="cursor-pointer rounded bg-amber-100 px-1 hover:bg-amber-300"
-        >
-          View Revealed Only
-        </button>
-      </a>
-      <table
-        class="w-full border-separate border-spacing-y-1 border border-transparent"
-        hx-trigger="newRevealed from:body"
-        hx-get="/revealed"
-        hx-target="#reveal"
-      >
-        <thead>
-          <tr class="bg-emerald-400">
-            <th>Ticket</th>
-            <th>Reporter</th>
             <th>Voters</th>
             <th>Avg</th>
             <th>Mode</th>
