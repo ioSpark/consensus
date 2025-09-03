@@ -1,0 +1,18 @@
+project_name: consensus
+version: 2
+
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+
+dockers:
+- image_templates:
+  - "ghcr.io/iospark/{{.ProjectName}}:latest"
+  - "ghcr.io/iospark/{{.ProjectName}}:{{.RawVersion}}"
+  - "ghcr.io/iospark/{{.ProjectName}}:{{.Major}}.{{.Minor}}"
