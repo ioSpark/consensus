@@ -24,6 +24,7 @@ func page(props PageProps, user app.User, children ...g.Node) g.Node {
 			gh.Link(gh.Rel("icon"), gh.Href("/static/favicon.ico")),
 			gh.Link(gh.Rel("stylesheet"), gh.Href("/static/style.css")),
 			gh.Script(gh.Src("/static/htmx.min.js")),
+			gh.Script(gh.Src("/static/_hyperscript.min.js")),
 		},
 		Body: []g.Node{
 			gh.Class(
@@ -76,3 +77,35 @@ func userImage(name string, includeName bool) g.Node {
 		g.If(includeName, gh.Span(gh.Class("mx-1"), g.Text(name))),
 	}
 }
+
+// TODO: Determine if we need the tmp variable or not
+const hyperscriptTable = `
+	on htmx:beforeSwap if target is me
+		make a <tbody/> called tmp
+		put event.detail.xhr.responseText into tmp.innerHTML
+
+		set :oldIds to []
+		for tr in <tr/> in me append tr.id to :oldIds end
+		log 'old', :oldIds
+
+		set :newIds to []
+		for tr in <tr/> in tmp append tr.id to :newIds end
+		log 'new', :newIds
+
+		for tr in <tr/> in me
+			if not (:newIds contain tr.id) add .leaving to tr end
+		end
+	end
+
+	on htmx:afterSwap if target is me
+		for tr in <tr/> in me
+			if (:newIds contains tr.id) and not (:oldIds contains tr.id)
+				add .entering to tr
+			end
+		end
+	end
+
+	on htmx:afterSettle if target is me
+		for tr in .entering in me remove .entering from tr end
+	end
+`

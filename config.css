@@ -1,3 +1,13 @@
 @import "tailwindcss" source(none);
 
 @source "html/**";
+
+/* Allow us to use tailwind to style HTMX states */
+/* Adjusted for v4 from: https://www.crocodile.dev/blog/css-transitions-with-tailwind-and-htmx */
+@custom-variant htmx-added (&.htmx-added, .htmx-added &);
+@custom-variant htmx-request (&.htmx-request, .htmx-request &);
+@custom-variant htmx-settling (&.htmx-settling, .htmx-settling &);
+@custom-variant htmx-swapping (&.htmx-swapping, .htmx-swapping &);
+
+@custom-variant leaving (&.leaving, .leaving &);
+@custom-variant entering (&.entering, .entering &);

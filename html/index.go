@@ -35,13 +35,10 @@ func Index(
 			),
 			gh.TBody(
 				gh.ID("tickets"),
-				g.Map(tickets, func(t *app.Ticket) g.Node {
-					if !t.Revealed {
-						return TicketRow(t, user, users)
-					}
-					// TODO: Is there a better "zero" value?
-					return g.Group{}
-				}),
+				hx.Trigger("every 5s"),
+				hx.Get("/to-point"),
+				g.Attr("_", hyperscriptTable),
+				ToPointPartial(user, tickets, users),
 			),
 		),
 
@@ -69,11 +66,9 @@ func Revealed(props PageProps, user app.User, tickets []*app.Ticket) g.Node {
 }
 
 func revealedTable(user app.User, tickets []*app.Ticket) g.Node {
+	// TODO: Sort
 	return gh.Table(
 		gh.Class("w-full border-separate border-spacing-y-1 border border-transparent"),
-		hx.Trigger("newRevealed from:body"),
-		hx.Get("/revealed"),
-		hx.Target("#reveal"),
 
 		gh.THead(
 			gh.Tr(
@@ -87,7 +82,9 @@ func revealedTable(user app.User, tickets []*app.Ticket) g.Node {
 		),
 
 		gh.TBody(
-			gh.ID("reveal"),
+			hx.Trigger("newRevealed from:body, every 5s"),
+			hx.Get("/revealed"),
+			g.Attr("_", hyperscriptTable),
 			g.Map(tickets, func(t *app.Ticket) g.Node {
 				if t.Revealed {
 					return RevealedRow(*t, user)
@@ -96,4 +93,17 @@ func revealedTable(user app.User, tickets []*app.Ticket) g.Node {
 			}),
 		),
 	)
+}
+
+func ToPointPartial(user app.User, tickets []*app.Ticket, allUsers []*app.User) g.Node {
+	// TODO: Sort
+	return g.Group{
+		g.Map(tickets, func(t *app.Ticket) g.Node {
+			if !t.Revealed {
+				return TicketRow(t, user, allUsers)
+			}
+			// TODO: Is there a better "zero" value?
+			return g.Group{}
+		}),
+	}
 }

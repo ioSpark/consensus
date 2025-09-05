@@ -58,7 +58,7 @@ func newTicketHandler(
 	}
 
 	user := r.Context().Value(contextUser).(app.User)
-	t, err := s.CreateTicket(app.NewTicket(title, link, user))
+	_, err := s.CreateTicket(app.NewTicket(title, link, user))
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		// TODO: Might not need to exist, since all tickets are based on ID
@@ -73,9 +73,25 @@ func newTicketHandler(
 	}
 
 	return g.Group{
-		html.TicketRow(t, user, s.Users()),
+		html.ToPointPartial(user, s.Tickets(), s.Users()),
 		html.InputRow(true),
 	}, nil
+}
+
+func toPoint(w http.ResponseWriter, r *http.Request, s app.Storage) (g.Node, error) {
+	user := r.Context().Value(contextUser).(app.User)
+
+	if r.Header.Get("HX-Request") == "true" {
+		group := g.Group{}
+		for _, t := range s.Tickets() {
+			if t.Revealed {
+				continue
+			}
+			group = append(group, html.TicketRow(t, user, s.Users()))
+		}
+		return group, nil
+	}
+	return g.Text("you shouldn't be here"), httpError{http.StatusTeapot}
 }
 
 func userCtx(s app.Storage, next http.Handler) http.Handler {
@@ -114,5 +130,6 @@ func Index(r chi.Router, s app.Storage) {
 
 		r.Post("/new", provideStorage(s, newTicketHandler))
 		r.Get("/revealed", provideStorage(s, revealedHandler))
+		r.Get("/to-point", provideStorage(s, toPoint))
 	})
 }

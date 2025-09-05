@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-//go:embed static
+//go:embed static/*
 var staticFS embed.FS
 
 func Static(r chi.Router) {

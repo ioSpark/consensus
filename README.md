@@ -24,7 +24,7 @@ Basic functionality that we are missing.
 - [ ] Persistence. Likely SQLite.
 - [ ] Display errors in UI
 - [ ] Ability to remove Tickets
-- [ ] "Live" view so tickets update without refreshing
+- [x] "Live" view so tickets update without refreshing
 
 ### Beta
 
@@ -39,6 +39,8 @@ Some extra features that we should have.
 ### Stable
 
 - [ ] UI/UX refinement
+  - [ ] Smoother "live" view
+  - [ ] Ensure consistent order of tickets and other items
 - [ ] URL validation
 - [ ] Code cleanup (e.g. TODO items generally removed, idiomatic go, etc)
 

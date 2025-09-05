@@ -19,8 +19,9 @@ func TicketRow(t *app.Ticket, u app.User, allUsers []*app.User) g.Node {
 
 	return gh.Tr(
 		gh.Class(
-			"hover:bg-linear-to-r bg-emerald-200 hover:from-emerald-400 hover:to-teal-500",
+			"hover:bg-linear-to-r bg-emerald-200 hover:from-emerald-400 hover:to-teal-500 leaving:opacity-0 entering:opacity-0 transition-opacity duration-1000 opacity-100",
 		),
+		gh.ID(fmt.Sprintf("ticket-%d", t.ID)),
 		gh.Td(
 			gh.Class("px-1"),
 			gh.A(
@@ -86,7 +87,12 @@ func TicketRow(t *app.Ticket, u app.User, allUsers []*app.User) g.Node {
 				g.If(canReveal == nil, g.Group{
 					hx.Post(fmt.Sprintf("/ticket/%d/reveal", t.ID)),
 					hx.Target("closest tr"),
-					hx.Swap("outerHTML"),
+					hx.Swap("outerHTML swap:1s"),
+					// A successful response is to remove this row
+					g.Attr(
+						"_",
+						"on htmx:afterOnLoad transition the closest <tr/> opacity to 0 over 1s",
+					),
 				}),
 				g.If(canReveal != nil, gh.Disabled()),
 
@@ -103,7 +109,6 @@ func InputRow(oob bool) g.Node {
 		gh.Class("my-2 py-1 border-y w-full"),
 		gh.ID("new-ticket"),
 		hx.Target("#tickets"),
-		hx.Swap("beforeend"),
 		g.If(oob, hx.SwapOOB("outerHTML")),
 
 		gh.Form(
@@ -154,8 +159,9 @@ func RevealedRow(t app.Ticket, u app.User) g.Node {
 
 	return gh.Tr(
 		gh.Class(
-			"hover:bg-linear-to-r bg-yellow-100 hover:from-yellow-200 hover:to-emerald-300",
+			"hover:bg-linear-to-r bg-yellow-100 hover:from-yellow-200 hover:to-emerald-300 leaving:opacity-0 entering:opacity-0 transition-opacity duration-1000 opacity-100",
 		),
+		gh.ID(fmt.Sprintf("reveal-%d", t.ID)),
 		gh.Td(
 			gh.Class("px-1"),
 			// TODO: Probably make links their own function
