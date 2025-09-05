@@ -14,7 +14,7 @@ var (
 )
 
 // TODO: Determine what should be pointers
-type TicketStorage interface {
+type TicketRepository interface {
 	Ticket(ID int) (*Ticket, error)
 	TicketByName(name string) (*Ticket, error)
 	Tickets() []*Ticket

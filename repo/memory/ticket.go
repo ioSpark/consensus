@@ -8,12 +8,12 @@ import (
 	"consensus/app"
 )
 
-func (s *Storage) Tickets() []*app.Ticket {
-	return s.tickets
+func (r *Repository) Tickets() []*app.Ticket {
+	return r.tickets
 }
 
-func (s *Storage) Ticket(ID int) (*app.Ticket, error) {
-	for _, t := range s.Tickets() {
+func (r *Repository) Ticket(ID int) (*app.Ticket, error) {
+	for _, t := range r.Tickets() {
 		if t.ID == ID {
 			return t, nil
 		}
@@ -21,8 +21,8 @@ func (s *Storage) Ticket(ID int) (*app.Ticket, error) {
 	return nil, app.ErrTicketNotExist
 }
 
-func (s *Storage) TicketByName(name string) (*app.Ticket, error) {
-	for _, t := range s.Tickets() {
+func (r *Repository) TicketByName(name string) (*app.Ticket, error) {
+	for _, t := range r.Tickets() {
 		if t.Name == name {
 			return t, nil
 		}
@@ -30,13 +30,13 @@ func (s *Storage) TicketByName(name string) (*app.Ticket, error) {
 	return nil, app.ErrTicketNotExist
 }
 
-func (s *Storage) CreateTicket(t app.Ticket) (*app.Ticket, error) {
+func (r *Repository) CreateTicket(t app.Ticket) (*app.Ticket, error) {
 	// Generate un-used ID
 	var newID int
 	// Can be improved
 	for {
 		newID = rand.IntN(8192) // Enough space without IDs being unweidly
-		_, err := s.Ticket(newID)
+		_, err := r.Ticket(newID)
 		if errors.Is(err, app.ErrTicketNotExist) {
 			break
 		} else if err != nil {
@@ -46,36 +46,36 @@ func (s *Storage) CreateTicket(t app.Ticket) (*app.Ticket, error) {
 
 	t.ID = newID
 
-	s.tickets = append(s.tickets, &t)
+	r.tickets = append(r.tickets, &t)
 	return &t, nil
 }
 
-func (s *Storage) DeleteTicket(ID int) error {
-	_, err := s.Ticket(ID)
+func (r *Repository) DeleteTicket(ID int) error {
+	_, err := r.Ticket(ID)
 	if err != nil && err == app.ErrTicketNotExist {
 		panic(err)
 	}
 
 	// Not the best way to do this
-	s.tickets = slices.DeleteFunc(s.tickets, func(t *app.Ticket) bool {
+	r.tickets = slices.DeleteFunc(r.tickets, func(t *app.Ticket) bool {
 		return t.ID == ID
 	})
 
 	return nil
 }
 
-func (s *Storage) UpdateTicket(t app.Ticket) error {
-	_, err := s.Ticket(t.ID)
+func (r *Repository) UpdateTicket(t app.Ticket) error {
+	_, err := r.Ticket(t.ID)
 	if err != nil && err == app.ErrTicketNotExist {
 		panic(err)
 	}
 
-	err = s.DeleteTicket(t.ID)
+	err = r.DeleteTicket(t.ID)
 	if err != nil {
 		panic(err)
 	}
 
-	newTicket, err := s.CreateTicket(t)
+	newTicket, err := r.CreateTicket(t)
 	if err != nil {
 		panic(err)
 	}

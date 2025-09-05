@@ -1,6 +1,6 @@
 package app
 
-type Storage interface {
-	UserStorage
-	TicketStorage
+type Repository interface {
+	UserRepository
+	TicketRepository
 }

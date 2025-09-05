@@ -16,24 +16,24 @@ import (
 func indexHandler(
 	w http.ResponseWriter,
 	r *http.Request,
-	s app.Storage,
+	repo app.Repository,
 ) (g.Node, error) {
 	user := r.Context().Value(contextUser).(app.UserID)
-	return html.Index(html.PageProps{}, user, s.Tickets(), s.Users()), nil
+	return html.Index(html.PageProps{}, user, repo.Tickets(), repo.Users()), nil
 }
 
 // Return all revealed tickets as rows
 func revealedHandler(
 	w http.ResponseWriter,
 	r *http.Request,
-	s app.Storage,
+	repo app.Repository,
 ) (g.Node, error) {
 	userID := r.Context().Value(contextUser).(app.UserID)
 
 	// Return just the table if we're a HTMX request
 	if r.Header.Get("HX-Request") == "true" {
 		group := g.Group{}
-		for _, t := range s.Tickets() {
+		for _, t := range repo.Tickets() {
 			if !t.Revealed {
 				continue
 			}
@@ -42,13 +42,13 @@ func revealedHandler(
 		}
 		return group, nil
 	}
-	return html.Revealed(html.PageProps{}, userID, s.Tickets()), nil
+	return html.Revealed(html.PageProps{}, userID, repo.Tickets()), nil
 }
 
 func newTicketHandler(
 	w http.ResponseWriter,
 	r *http.Request,
-	s app.Storage,
+	repo app.Repository,
 ) (g.Node, error) {
 	title := strings.TrimSpace(r.FormValue("title"))
 	link := strings.TrimSpace(r.FormValue("link"))
@@ -58,7 +58,7 @@ func newTicketHandler(
 	}
 
 	userID := r.Context().Value(contextUser).(app.UserID)
-	_, err := s.CreateTicket(app.NewTicket(title, link, userID))
+	_, err := repo.CreateTicket(app.NewTicket(title, link, userID))
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		// TODO: Might not need to exist, since all tickets are based on ID
@@ -73,28 +73,32 @@ func newTicketHandler(
 	}
 
 	return g.Group{
-		html.ToPointPartial(userID, s.Tickets(), s.Users()),
+		html.ToPointPartial(userID, repo.Tickets(), repo.Users()),
 		html.InputRow(true),
 	}, nil
 }
 
-func toPoint(w http.ResponseWriter, r *http.Request, s app.Storage) (g.Node, error) {
+func toPoint(
+	w http.ResponseWriter,
+	r *http.Request,
+	repo app.Repository,
+) (g.Node, error) {
 	userID := r.Context().Value(contextUser).(app.UserID)
 
 	if r.Header.Get("HX-Request") == "true" {
 		group := g.Group{}
-		for _, t := range s.Tickets() {
+		for _, t := range repo.Tickets() {
 			if t.Revealed {
 				continue
 			}
-			group = append(group, html.TicketRow(t, userID, s.Users()))
+			group = append(group, html.TicketRow(t, userID, repo.Users()))
 		}
 		return group, nil
 	}
 	return g.Text("you shouldn't be here"), httpError{http.StatusTeapot}
 }
 
-func userCtx(s app.Storage, next http.Handler) http.Handler {
+func userCtx(s app.Repository, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		forwardedUser := r.Header.Get("X-Forwarded-User")
 		if forwardedUser == "" {
@@ -120,15 +124,15 @@ func userCtx(s app.Storage, next http.Handler) http.Handler {
 	})
 }
 
-func Index(r chi.Router, s app.Storage) {
+func Index(r chi.Router, repo app.Repository) {
 	r.Route("/", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
-			return userCtx(s, next)
+			return userCtx(repo, next)
 		})
 
-		r.Get("/", provideStorage(s, indexHandler))
+		r.Get("/", provideRepo(repo, indexHandler))
 
-		r.Get("/revealed", provideStorage(s, revealedHandler))
-		r.Get("/to-point", provideStorage(s, toPoint))
+		r.Get("/revealed", provideRepo(repo, revealedHandler))
+		r.Get("/to-point", provideRepo(repo, toPoint))
 	})
 }

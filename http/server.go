@@ -36,15 +36,15 @@ func (h httpError) StatusCode() int {
 }
 
 type Server struct {
-	log     *slog.Logger
-	mux     chi.Router
-	server  *http.Server
-	storage app.Storage
+	log        *slog.Logger
+	mux        chi.Router
+	server     *http.Server
+	repository app.Repository
 }
 
 type NewServerOptions struct {
-	Log     *slog.Logger
-	Storage app.Storage
+	Log        *slog.Logger
+	Repository app.Repository
 }
 
 func NewServer(opts NewServerOptions) *Server {
@@ -55,9 +55,9 @@ func NewServer(opts NewServerOptions) *Server {
 	mux := chi.NewRouter()
 
 	return &Server{
-		log:     opts.Log,
-		mux:     mux,
-		storage: opts.Storage,
+		log:        opts.Log,
+		mux:        mux,
+		repository: opts.Repository,
 		server: &http.Server{
 			Addr:              ":8088",
 			Handler:           mux,

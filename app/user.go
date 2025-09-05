@@ -17,7 +17,7 @@ func NewUser(raw string) UserID {
 }
 
 // TODO: Determine what should be pointers
-type UserStorage interface {
+type UserRepository interface {
 	User(ID string) (UserID, error)
 	Users() []UserID
 	// TODO: Should we accept parameters and create our own struct?

@@ -12,12 +12,12 @@ import (
 	ghttp "maragu.dev/gomponents/http"
 )
 
-// provideStorage passes the storage interface, and wraps the returned output into
+// provideRepo passes the repository interface, and wraps the returned output into
 // a http.Handler with gomponents http.Adapt. This provides the calling functions
 // to only respond with Gomponents node, and a fairly easy way to return HTTP errors.
-func provideStorage(
-	s app.Storage,
-	fn func(http.ResponseWriter, *http.Request, app.Storage) (g.Node, error),
+func provideRepo(
+	s app.Repository,
+	fn func(http.ResponseWriter, *http.Request, app.Repository) (g.Node, error),
 ) http.HandlerFunc {
 	return ghttp.Adapt(func(w http.ResponseWriter, r *http.Request) (g.Node, error) {
 		return fn(w, r, s)
@@ -35,7 +35,7 @@ func (s *Server) setupRoutes() {
 
 		Health(r)
 
-		Index(r, s.storage)
-		Ticket(r, s.storage)
+		Index(r, s.repository)
+		Ticket(r, s.repository)
 	})
 }

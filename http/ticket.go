@@ -18,7 +18,7 @@ import (
 func pointTicketHandler(
 	w http.ResponseWriter,
 	r *http.Request,
-	s app.Storage,
+	repo app.Repository,
 ) (g.Node, error) {
 	value, err := strconv.ParseInt(chi.URLParam(r, "value"), 10, 64)
 	if err != nil {
@@ -47,18 +47,18 @@ func pointTicketHandler(
 		panic(err)
 	}
 
-	err = s.UpdateTicket(*ticket)
+	err = repo.UpdateTicket(*ticket)
 	if err != nil {
 		panic(err)
 	}
 
-	return html.TicketRow(ticket, userID, s.Users()), nil
+	return html.TicketRow(ticket, userID, repo.Users()), nil
 }
 
 func revealPointsHandler(
 	w http.ResponseWriter,
 	r *http.Request,
-	s app.Storage,
+	repo app.Repository,
 ) (g.Node, error) {
 	userID := r.Context().Value(contextUser).(app.UserID)
 	ticket := r.Context().Value(contextTicket).(*app.Ticket)
@@ -77,7 +77,7 @@ func revealPointsHandler(
 		panic(err)
 	}
 
-	err = s.UpdateTicket(*ticket)
+	err = repo.UpdateTicket(*ticket)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +88,7 @@ func revealPointsHandler(
 	return g.Group{}, nil
 }
 
-func ticketCtx(s app.Storage, next http.Handler) http.Handler {
+func ticketCtx(repo app.Repository, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		IDstring := strings.TrimSpace(chi.URLParam(r, "ID"))
 
@@ -109,7 +109,7 @@ func ticketCtx(s app.Storage, next http.Handler) http.Handler {
 			return
 		}
 
-		t, err := s.Ticket(ID)
+		t, err := repo.Ticket(ID)
 		if err == app.ErrTicketNotExist {
 			http.Error(
 				w,
@@ -127,8 +127,8 @@ func ticketCtx(s app.Storage, next http.Handler) http.Handler {
 	})
 }
 
-func Ticket(r chi.Router, s app.Storage) {
-	r.Post("/ticket", provideStorage(s, newTicketHandler))
+func Ticket(r chi.Router, s app.Repository) {
+	r.Post("/ticket", provideRepo(s, newTicketHandler))
 	r.Route("/ticket/{ID}", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return userCtx(s, next)
@@ -137,8 +137,8 @@ func Ticket(r chi.Router, s app.Storage) {
 			return ticketCtx(s, next)
 		})
 
-		r.Put("/point/{value}", provideStorage(s, pointTicketHandler))
-		r.Post("/reveal", provideStorage(s, revealPointsHandler))
+		r.Put("/point/{value}", provideRepo(s, pointTicketHandler))
+		r.Post("/reveal", provideRepo(s, revealPointsHandler))
 		// r.Delete("/", deleteTicketHandler)
 	})
 }

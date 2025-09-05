@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"consensus/http"
-	"consensus/storage/memory"
+	"consensus/repo/memory"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -55,8 +55,8 @@ func start(log *slog.Logger) error {
 	defer stop()
 
 	server := http.NewServer(http.NewServerOptions{
-		Log:     log,
-		Storage: memory.NewStorage(),
+		Log:        log,
+		Repository: memory.NewRepository(),
 	})
 
 	eg, ctx := errgroup.WithContext(ctx)
