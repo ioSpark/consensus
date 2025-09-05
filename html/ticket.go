@@ -112,7 +112,7 @@ func InputRow(oob bool) g.Node {
 
 		gh.Form(
 			gh.AutoComplete("off"),
-			hx.Post("/new"),
+			hx.Post("/ticket"),
 
 			gh.H4(gh.Class("text-lg font-bold"), g.Text("New Ticket")),
 			gh.Input(

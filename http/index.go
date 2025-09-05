@@ -128,7 +128,6 @@ func Index(r chi.Router, s app.Storage) {
 
 		r.Get("/", provideStorage(s, indexHandler))
 
-		r.Post("/new", provideStorage(s, newTicketHandler))
 		r.Get("/revealed", provideStorage(s, revealedHandler))
 		r.Get("/to-point", provideStorage(s, toPoint))
 	})

@@ -128,6 +128,7 @@ func ticketCtx(s app.Storage, next http.Handler) http.Handler {
 }
 
 func Ticket(r chi.Router, s app.Storage) {
+	r.Post("/ticket", provideStorage(s, newTicketHandler))
 	r.Route("/ticket/{ID}", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return userCtx(s, next)
