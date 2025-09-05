@@ -2,16 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log/slog"
-	"math/rand/v2"
 	"os"
 	"os/signal"
-	"slices"
 	"syscall"
 
-	"consensus/app"
 	"consensus/http"
+	"consensus/storage/memory"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -36,131 +33,6 @@ import (
 // TODO: Generally remove all of these TODO's
 // TODO: URL validation
 
-// TODO: Unsafe, temporary in-memory "storage" layer. Could be coded better
-type storage struct {
-	tickets []*app.Ticket
-	users   []app.UserID
-}
-
-func (s *storage) Tickets() []*app.Ticket {
-	return s.tickets
-}
-
-func (s *storage) Ticket(ID int) (*app.Ticket, error) {
-	for _, t := range s.Tickets() {
-		if t.ID == ID {
-			return t, nil
-		}
-	}
-	return nil, app.ErrTicketNotExist
-}
-
-func (s *storage) TicketByName(name string) (*app.Ticket, error) {
-	for _, t := range s.Tickets() {
-		if t.Name == name {
-			return t, nil
-		}
-	}
-	return nil, app.ErrTicketNotExist
-}
-
-func (s *storage) CreateTicket(t app.Ticket) (*app.Ticket, error) {
-	// Generate un-used ID
-	var newID int
-	// Can be improved
-	for {
-		newID = rand.IntN(8192) // Enough space without IDs being unweidly
-		_, err := s.Ticket(newID)
-		if errors.Is(err, app.ErrTicketNotExist) {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-	}
-
-	t.ID = newID
-
-	s.tickets = append(s.tickets, &t)
-	return &t, nil
-}
-
-func (s *storage) DeleteTicket(ID int) error {
-	_, err := s.Ticket(ID)
-	if err != nil && err == app.ErrTicketNotExist {
-		panic(err)
-	}
-
-	// Not the best way to do this
-	s.tickets = slices.DeleteFunc(s.tickets, func(t *app.Ticket) bool {
-		return t.ID == ID
-	})
-
-	return nil
-}
-
-func (s *storage) UpdateTicket(t app.Ticket) error {
-	_, err := s.Ticket(t.ID)
-	if err != nil && err == app.ErrTicketNotExist {
-		panic(err)
-	}
-
-	err = s.DeleteTicket(t.ID)
-	if err != nil {
-		panic(err)
-	}
-
-	newTicket, err := s.CreateTicket(t)
-	if err != nil {
-		panic(err)
-	}
-
-	newTicket.ID = t.ID
-
-	return nil
-}
-
-func (s *storage) Users() []app.UserID {
-	return s.users
-}
-
-func (s *storage) User(name string) (app.UserID, error) {
-	for _, u := range s.Users() {
-		if string(u) == name {
-			return u, nil
-		}
-	}
-	return "", app.ErrUserNotExist
-}
-
-func (s *storage) CreateUser(u app.UserID) error {
-	_, err := s.User(string(u))
-	if err != app.ErrUserNotExist && err != nil {
-		panic(err)
-	} else if err == nil {
-		return app.ErrUserAlreadyExists
-	}
-
-	s.users = append(s.users, u)
-	return nil
-}
-
-func (s *storage) DeleteUser(ID app.UserID) error {
-	_, err := s.User(string(ID))
-	if err != nil && err == app.ErrUserNotExist {
-		panic(err)
-	}
-
-	s.users = slices.DeleteFunc(s.users, func(u app.UserID) bool {
-		return u == ID
-	})
-
-	return nil
-}
-
-func newStorage() *storage {
-	return &storage{}
-}
-
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
@@ -182,11 +54,9 @@ func start(log *slog.Logger) error {
 	)
 	defer stop()
 
-	s := newStorage()
-
 	server := http.NewServer(http.NewServerOptions{
 		Log:     log,
-		Storage: s,
+		Storage: memory.NewStorage(),
 	})
 
 	eg, ctx := errgroup.WithContext(ctx)
