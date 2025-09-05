@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrCantReveallNoVotes  = fmt.Errorf("nobody voted, cannot reveal")
+	ErrCantRevealNoVotes   = fmt.Errorf("nobody voted, cannot reveal")
 	ErrTicketAlreadyExists = fmt.Errorf("ticket with name already exists")
 	ErrTicketNotExist      = fmt.Errorf("ticket does not exist")
 	ErrUserCantReveal      = fmt.Errorf("user did not raise ticket, cannot reveal")
@@ -50,7 +50,7 @@ func (t *Ticket) CanReveal(userID UserID) error {
 	if userID != t.RaisedBy {
 		return ErrUserCantReveal
 	} else if len(t.Votes) == 0 {
-		return ErrCantReveallNoVotes
+		return ErrCantRevealNoVotes
 	}
 	return nil
 }
