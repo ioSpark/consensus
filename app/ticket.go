@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 )
@@ -27,35 +28,35 @@ type Ticket struct {
 	ID       int
 	Name     string
 	Link     string
-	RaisedBy User
-	// TODO: Maybe doesn't need to be a map? As Point contains user
-	Points   map[User]Point
+	RaisedBy UserID
+	Votes    map[UserID]Point
 	Revealed bool
 }
 
-func (t *Ticket) Point(user User, v int) error {
-	// TODO: Should we expect the caller to pass us a Point struct instead?
-	p, err := NewPoint(user, v)
+func (t *Ticket) Vote(userID UserID, v int) error {
+	p, err := NewPoint(v)
 	// Only returns ErrInvalidPoint
-	if err != nil {
+	if errors.Is(err, ErrInvalidPoint) {
 		return err
+	} else if err != nil {
+		panic(err)
 	}
 
-	t.Points[user] = p
+	t.Votes[userID] = p
 	return nil
 }
 
-func (t *Ticket) CanReveal(user User) error {
-	if user.Name != t.RaisedBy.Name {
+func (t *Ticket) CanReveal(userID UserID) error {
+	if userID != t.RaisedBy {
 		return ErrUserCantReveal
-	} else if len(t.Points) == 0 {
+	} else if len(t.Votes) == 0 {
 		return ErrCantReveallNoVotes
 	}
 	return nil
 }
 
-func (t *Ticket) Reveal(user User) error {
-	err := t.CanReveal(user)
+func (t *Ticket) Reveal(userID UserID) error {
+	err := t.CanReveal(userID)
 	if err != nil {
 		return err
 	}
@@ -68,36 +69,36 @@ func (t *Ticket) Reveal(user User) error {
 //	Perhaps if we introduce non-numbers?
 func (t *Ticket) Average() float64 {
 	total := 0
-	for _, v := range t.Points {
-		total += v.Point
+	for _, v := range t.Votes {
+		total += int(v)
 	}
-	return float64(total) / float64(len(t.Points))
+	return float64(total) / float64(len(t.Votes))
 }
 
 // Mode returns the most frequent point values, in ascending order.
 // If there are no points, it returns nil.
-func (t *Ticket) Mode() []int {
+func (t *Ticket) Mode() []Point {
 	// Mode shouldn't be called if the ticket is not revealed (thus, must have points)
 	// but handle it anyway.
-	if len(t.Points) == 0 {
+	if len(t.Votes) == 0 {
 		return nil
 	}
 
-	counts := make(map[int]int, len(t.Points))
+	counts := make(map[Point]int, len(t.Votes))
 	maxCount := 0
 
-	for _, p := range t.Points {
-		c := counts[p.Point] + 1
-		counts[p.Point] = c
+	for _, p := range t.Votes {
+		c := counts[p] + 1
+		counts[p] = c
 		if c > maxCount {
 			maxCount = c
 		}
 	}
 
-	result := make([]int, 0)
-	for k, c := range counts {
+	result := make([]Point, 0)
+	for p, c := range counts {
 		if c == maxCount {
-			result = append(result, k)
+			result = append(result, p)
 		}
 	}
 
@@ -105,20 +106,16 @@ func (t *Ticket) Mode() []int {
 	return result
 }
 
-func (t *Ticket) Voted(user User) bool {
-	for _, p := range t.Points {
-		if p.User.Name == user.Name {
-			return true
-		}
-	}
-	return false
+func (t *Ticket) Voted(userID UserID) bool {
+	_, ok := t.Votes[userID]
+	return ok
 }
 
-func NewTicket(name, link string, reporter User) Ticket {
+func NewTicket(name, link string, userID UserID) Ticket {
 	return Ticket{
 		Name:     name,
 		Link:     link,
-		RaisedBy: reporter,
-		Points:   make(map[User]Point),
+		RaisedBy: userID,
+		Votes:    make(map[UserID]Point),
 	}
 }

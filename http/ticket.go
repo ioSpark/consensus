@@ -31,11 +31,11 @@ func pointTicketHandler(
 			}
 	}
 
-	user := r.Context().Value(contextUser).(app.User)
+	userID := r.Context().Value(contextUser).(app.UserID)
 	ticket := r.Context().Value(contextTicket).(*app.Ticket)
 
 	// TODO: Is converting from int64 to int like this safe? (probably)
-	err = ticket.Point(user, int(value))
+	err = ticket.Vote(userID, int(value))
 	if err == app.ErrInvalidPoint {
 		return g.Textf(
 				"invalid point value %d",
@@ -52,7 +52,7 @@ func pointTicketHandler(
 		panic(err)
 	}
 
-	return html.TicketRow(ticket, user, s.Users()), nil
+	return html.TicketRow(ticket, userID, s.Users()), nil
 }
 
 func revealPointsHandler(
@@ -60,11 +60,11 @@ func revealPointsHandler(
 	r *http.Request,
 	s app.Storage,
 ) (g.Node, error) {
-	user := r.Context().Value(contextUser).(app.User)
+	userID := r.Context().Value(contextUser).(app.UserID)
 	ticket := r.Context().Value(contextTicket).(*app.Ticket)
 
 	// TODO: Return HTMX error
-	err := ticket.Reveal(user)
+	err := ticket.Reveal(userID)
 	if err == app.ErrUserCantReveal {
 		return g.Text(
 				"user did not raise ticket, cannot reveal",

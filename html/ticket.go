@@ -2,7 +2,6 @@ package html
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 	"strconv"
 
@@ -14,8 +13,8 @@ import (
 	gh "maragu.dev/gomponents/html"
 )
 
-func TicketRow(t *app.Ticket, u app.User, allUsers []*app.User) g.Node {
-	canReveal := t.CanReveal(u)
+func TicketRow(t *app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
+	canReveal := t.CanReveal(userID)
 
 	return gh.Tr(
 		gh.Class(
@@ -37,8 +36,8 @@ func TicketRow(t *app.Ticket, u app.User, allUsers []*app.User) g.Node {
 			gh.Span(
 				gc.JoinAttrs(
 					"class",
-					g.If(t.RaisedBy.Name == u.Name, gh.Class("font-bold")),
-					userImage(t.RaisedBy.Name, true),
+					g.If(t.RaisedBy == userID, gh.Class("font-bold")),
+					userImage(t.RaisedBy, true),
 				),
 			),
 		),
@@ -47,27 +46,27 @@ func TicketRow(t *app.Ticket, u app.User, allUsers []*app.User) g.Node {
 			gh.Class("px-1"),
 			gh.Div(
 				gh.Class("flex justify-center gap-1"),
-				g.Map(app.PointValues, func(v int) g.Node {
-					userPoint := t.Points[u]
+				g.Map(app.PointValues, func(v app.Point) g.Node {
+					userVote := t.Votes[userID]
 					voted := false
-					if userPoint.Point == v {
+					if userVote == v {
 						voted = true
 					} else {
 						voted = false
 					}
 
-					return voteButton(*t, v, voted)
+					return voteButton(t.ID, v, voted)
 				}),
 			),
 		),
 
 		gh.Td(
 			gh.Class("flex items-center gap-1 px-1"),
-			g.Map(allUsers, func(u *app.User) g.Node {
+			g.Map(allUsers, func(u app.UserID) g.Node {
 				return gh.Span(gc.JoinAttrs(
 					"class",
-					g.If(!t.Voted(*u), gh.Class("opacity-30")),
-					userImage(u.Name, false),
+					g.If(!t.Voted(u), gh.Class("opacity-30")),
+					userImage(u, false),
 				))
 			}),
 		),
@@ -143,19 +142,25 @@ func InputRow(oob bool) g.Node {
 	return row
 }
 
-func RevealedRow(t app.Ticket, u app.User) g.Node {
+func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
+	type vote struct {
+		User  app.UserID
+		Value app.Point
+	}
+
+	votes := make([]vote, 0)
+	for u, v := range t.Votes {
+		votes = append(votes, vote{u, v})
+	}
 	// Show largest values first
-	ticketPoints := slices.SortedStableFunc(
-		maps.Values(t.Points),
-		func(a, b app.Point) int {
-			if a.Point < b.Point {
-				return 1
-			} else if a.Point > b.Point {
-				return -1
-			}
-			return 0
-		},
-	)
+	slices.SortStableFunc(votes, func(a, b vote) int {
+		if a.Value < b.Value {
+			return 1
+		} else if a.Value > b.Value {
+			return -1
+		}
+		return 0
+	})
 
 	return gh.Tr(
 		gh.Class(
@@ -178,25 +183,25 @@ func RevealedRow(t app.Ticket, u app.User) g.Node {
 			gh.Span(
 				gc.JoinAttrs(
 					"class",
-					g.If(t.RaisedBy.Name == u.Name, gh.Class("font-bold")),
-					userImage(t.RaisedBy.Name, true),
+					g.If(t.RaisedBy == userID, gh.Class("font-bold")),
+					userImage(t.RaisedBy, true),
 				),
 			),
 		),
 
 		gh.Td(
 			gh.Class("px-1"),
-			g.Map(ticketPoints, func(p app.Point) g.Node {
+			g.Map(votes, func(v vote) g.Node {
 				return gh.Div(
 					gc.JoinAttrs(
 						"class",
 						gh.Class("flex justify-end gap-2"),
-						g.If(p.User.Name == u.Name, gh.Class("font-bold")),
+						g.If(v.User == userID, gh.Class("font-bold")),
 					),
-					gh.Span(userImage(p.User.Name, true)),
+					gh.Span(userImage(v.User, true)),
 					gh.Span(
 						gh.Class("font-mono"),
-						g.Textf("%d", p.Point),
+						g.Textf("%d", v.Value),
 					),
 				)
 			}),
@@ -211,15 +216,15 @@ func RevealedRow(t app.Ticket, u app.User) g.Node {
 			gh.Class("px-1 font-mono"),
 			gh.Div(
 				gh.Class("flex place-content-center gap-1"),
-				g.Map(t.Mode(), func(i int) g.Node {
-					return gh.Span(g.Textf("%d", i))
+				g.Map(t.Mode(), func(p app.Point) g.Node {
+					return gh.Span(g.Textf("%d", p))
 				}),
 			),
 		),
 	)
 }
 
-func voteButton(t app.Ticket, value int, voted bool) g.Node {
+func voteButton(tickedID int, point app.Point, voted bool) g.Node {
 	return gh.Button(
 		gc.JoinAttrs(
 			"class",
@@ -228,10 +233,10 @@ func voteButton(t app.Ticket, value int, voted bool) g.Node {
 			gh.Class("rounded px-1 font-mono"),
 		),
 
-		hx.Put(fmt.Sprintf("/ticket/%d/point/%d", t.ID, value)),
+		hx.Put(fmt.Sprintf("/ticket/%d/point/%d", tickedID, point)),
 		hx.Swap("outerHTML"),
 		hx.Target("closest tr"),
 
-		g.Textf("%d", value),
+		g.Textf("%d", point),
 	)
 }

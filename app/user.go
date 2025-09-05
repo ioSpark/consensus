@@ -9,19 +9,18 @@ var (
 	ErrUserAlreadyExists = fmt.Errorf("user already exists")
 )
 
-type User struct {
-	Name string
-}
+type UserID string
 
-func NewUser(name string) *User {
-	return &User{name}
+// Currently the ID is just the GitHub user name
+func NewUser(raw string) UserID {
+	return UserID(raw)
 }
 
 // TODO: Determine what should be pointers
 type UserStorage interface {
-	User(name string) (*User, error)
-	Users() []*User
+	User(ID string) (UserID, error)
+	Users() []UserID
 	// TODO: Should we accept parameters and create our own struct?
-	CreateUser(user User) error
-	DeleteUser(name string) error
+	CreateUser(ID UserID) error
+	DeleteUser(ID UserID) error
 }

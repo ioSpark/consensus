@@ -39,7 +39,7 @@ import (
 // TODO: Unsafe, temporary in-memory "storage" layer. Could be coded better
 type storage struct {
 	tickets []*app.Ticket
-	users   []*app.User
+	users   []app.UserID
 }
 
 func (s *storage) Tickets() []*app.Ticket {
@@ -119,40 +119,39 @@ func (s *storage) UpdateTicket(t app.Ticket) error {
 	return nil
 }
 
-func (s *storage) Users() []*app.User {
+func (s *storage) Users() []app.UserID {
 	return s.users
 }
 
-func (s *storage) User(name string) (*app.User, error) {
+func (s *storage) User(name string) (app.UserID, error) {
 	for _, u := range s.Users() {
-		if u.Name == name {
+		if string(u) == name {
 			return u, nil
 		}
 	}
-	return nil, app.ErrUserNotExist
+	return "", app.ErrUserNotExist
 }
 
-func (s *storage) CreateUser(u app.User) error {
-	_, err := s.User(u.Name)
+func (s *storage) CreateUser(u app.UserID) error {
+	_, err := s.User(string(u))
 	if err != app.ErrUserNotExist && err != nil {
 		panic(err)
 	} else if err == nil {
 		return app.ErrUserAlreadyExists
 	}
 
-	s.users = append(s.users, &u)
+	s.users = append(s.users, u)
 	return nil
 }
 
-func (s *storage) DeleteUser(name string) error {
-	_, err := s.User(name)
+func (s *storage) DeleteUser(ID app.UserID) error {
+	_, err := s.User(string(ID))
 	if err != nil && err == app.ErrUserNotExist {
 		panic(err)
 	}
 
-	// Not the best way to do this
-	s.users = slices.DeleteFunc(s.users, func(u *app.User) bool {
-		return u.Name == name
+	s.users = slices.DeleteFunc(s.users, func(u app.UserID) bool {
+		return u == ID
 	})
 
 	return nil

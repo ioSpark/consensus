@@ -15,7 +15,7 @@ type PageProps struct {
 	Description string
 }
 
-func page(props PageProps, user app.User, children ...g.Node) g.Node {
+func page(props PageProps, userID app.UserID, children ...g.Node) g.Node {
 	return gc.HTML5(gc.HTML5Props{
 		Title:       props.Title,
 		Description: props.Description,
@@ -30,14 +30,14 @@ func page(props PageProps, user app.User, children ...g.Node) g.Node {
 			gh.Class(
 				"bg-linear-to-br m-auto max-w-max from-amber-200 to-teal-300 bg-fixed",
 			),
-			header(user),
+			header(userID),
 			g.Group(children),
 			footer(),
 		},
 	})
 }
 
-func header(u app.User) g.Node {
+func header(u app.UserID) g.Node {
 	return gh.Header(
 		gh.Class("flex justify-between"),
 		gh.H1(gh.Class("text-3xl font-bold"), g.Text("Consensus")),
@@ -47,7 +47,7 @@ func header(u app.User) g.Node {
 				gc.JoinAttrs(
 					"class",
 					gh.Class("font-bold"),
-					userImage(u.Name, true),
+					userImage(u, true),
 				),
 			),
 			gh.A(
@@ -67,14 +67,14 @@ func footer() g.Node {
 	return gh.Footer(gh.Class("h-[25vh]"))
 }
 
-func userImage(name string, includeName bool) g.Node {
+func userImage(ID app.UserID, includeName bool) g.Node {
 	return g.Group{
 		gh.Class("inline-flex items-baseline"),
 		gh.Img(
 			gh.Class("size-5 self-center rounded-full"),
-			gh.Src(fmt.Sprintf("https://github.com/%s.png?size=20", name)),
+			gh.Src(fmt.Sprintf("https://github.com/%s.png?size=20", ID)),
 		),
-		g.If(includeName, gh.Span(gh.Class("mx-1"), g.Text(name))),
+		g.If(includeName, gh.Span(gh.Class("mx-1"), g.Text(string(ID)))),
 	}
 }
 

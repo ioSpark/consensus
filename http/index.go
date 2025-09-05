@@ -18,7 +18,7 @@ func indexHandler(
 	r *http.Request,
 	s app.Storage,
 ) (g.Node, error) {
-	user := r.Context().Value(contextUser).(app.User)
+	user := r.Context().Value(contextUser).(app.UserID)
 	return html.Index(html.PageProps{}, user, s.Tickets(), s.Users()), nil
 }
 
@@ -28,7 +28,7 @@ func revealedHandler(
 	r *http.Request,
 	s app.Storage,
 ) (g.Node, error) {
-	user := r.Context().Value(contextUser).(app.User)
+	userID := r.Context().Value(contextUser).(app.UserID)
 
 	// Return just the table if we're a HTMX request
 	if r.Header.Get("HX-Request") == "true" {
@@ -37,12 +37,12 @@ func revealedHandler(
 			if !t.Revealed {
 				continue
 			}
-			group = append(group, html.RevealedRow(*t, user))
+			group = append(group, html.RevealedRow(*t, userID))
 
 		}
 		return group, nil
 	}
-	return html.Revealed(html.PageProps{}, user, s.Tickets()), nil
+	return html.Revealed(html.PageProps{}, userID, s.Tickets()), nil
 }
 
 func newTicketHandler(
@@ -57,8 +57,8 @@ func newTicketHandler(
 		return g.Text("title or link were blank"), httpError{http.StatusBadRequest}
 	}
 
-	user := r.Context().Value(contextUser).(app.User)
-	_, err := s.CreateTicket(app.NewTicket(title, link, user))
+	userID := r.Context().Value(contextUser).(app.UserID)
+	_, err := s.CreateTicket(app.NewTicket(title, link, userID))
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		// TODO: Might not need to exist, since all tickets are based on ID
@@ -73,13 +73,13 @@ func newTicketHandler(
 	}
 
 	return g.Group{
-		html.ToPointPartial(user, s.Tickets(), s.Users()),
+		html.ToPointPartial(userID, s.Tickets(), s.Users()),
 		html.InputRow(true),
 	}, nil
 }
 
 func toPoint(w http.ResponseWriter, r *http.Request, s app.Storage) (g.Node, error) {
-	user := r.Context().Value(contextUser).(app.User)
+	userID := r.Context().Value(contextUser).(app.UserID)
 
 	if r.Header.Get("HX-Request") == "true" {
 		group := g.Group{}
@@ -87,7 +87,7 @@ func toPoint(w http.ResponseWriter, r *http.Request, s app.Storage) (g.Node, err
 			if t.Revealed {
 				continue
 			}
-			group = append(group, html.TicketRow(t, user, s.Users()))
+			group = append(group, html.TicketRow(t, userID, s.Users()))
 		}
 		return group, nil
 	}
@@ -109,13 +109,13 @@ func userCtx(s app.Storage, next http.Handler) http.Handler {
 		u, err := s.User(forwardedUser)
 		if err == app.ErrUserNotExist {
 			u = app.NewUser(forwardedUser)
-			err := s.CreateUser(*u)
+			err := s.CreateUser(u)
 			if err != nil {
 				panic(err)
 			}
 		}
 
-		ctx := context.WithValue(r.Context(), contextUser, *u)
+		ctx := context.WithValue(r.Context(), contextUser, u)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
