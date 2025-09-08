@@ -52,7 +52,9 @@ func (r *Repository) CreateTicket(t app.Ticket) (*app.Ticket, error) {
 
 func (r *Repository) DeleteTicket(ID int) error {
 	_, err := r.Ticket(ID)
-	if err != nil && err == app.ErrTicketNotExist {
+	if errors.Is(err, app.ErrTicketNotExist) {
+		return err
+	} else if err != nil {
 		panic(err)
 	}
 
@@ -66,7 +68,9 @@ func (r *Repository) DeleteTicket(ID int) error {
 
 func (r *Repository) UpdateTicket(t app.Ticket) error {
 	_, err := r.Ticket(t.ID)
-	if err != nil && err == app.ErrTicketNotExist {
+	if errors.Is(err, app.ErrTicketNotExist) {
+		return err
+	} else if err != nil {
 		panic(err)
 	}
 

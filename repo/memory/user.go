@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"errors"
 	"slices"
 
 	"consensus/app"
@@ -21,10 +22,10 @@ func (r *Repository) User(name string) (app.UserID, error) {
 
 func (r *Repository) CreateUser(u app.UserID) error {
 	_, err := r.User(string(u))
-	if err != app.ErrUserNotExist && err != nil {
-		panic(err)
-	} else if err == nil {
+	if err == nil {
 		return app.ErrUserAlreadyExists
+	} else if !errors.Is(err, app.ErrUserNotExist) {
+		panic(err)
 	}
 
 	r.users = append(r.users, u)
@@ -33,7 +34,9 @@ func (r *Repository) CreateUser(u app.UserID) error {
 
 func (r *Repository) DeleteUser(ID app.UserID) error {
 	_, err := r.User(string(ID))
-	if err != nil && err == app.ErrUserNotExist {
+	if errors.Is(err, app.ErrUserNotExist) {
+		return err
+	} else if err != nil {
 		panic(err)
 	}
 

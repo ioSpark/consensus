@@ -61,15 +61,7 @@ func testUserCRUD(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test - memory implementation panics
 func testUserDeleteNonExistent(t *testing.T, repo app.Repository) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			t.Logf("[Characterisation Test] recovered panic: %v", r)
-		}
-	}()
-
 	err := repo.DeleteUser(app.UserID("non-existent"))
 	if err == nil {
 		t.Fatal("expected non-existent user update to fail")
@@ -79,19 +71,11 @@ func testUserDeleteNonExistent(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test - memory implementation panics
 func testUserCreateDuplicate(t *testing.T, repo app.Repository) {
 	u := app.NewUser("duplicate")
 	if err := repo.CreateUser(u); err != nil {
 		t.Fatalf("first create user failed: %v", err)
 	}
-
-	defer func() {
-		r := recover()
-		if r != nil {
-			t.Logf("[Characterisation Test] recovered panic: %v", r)
-		}
-	}()
 
 	if err := repo.CreateUser(u); err == nil {
 		fmt.Println(repo.Users())

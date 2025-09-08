@@ -115,15 +115,7 @@ func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test - memory implementation panics
 func testTicketUpdateNonExistent(t *testing.T, repo app.Repository) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			t.Logf("[Characterisation Test] recovered panic: %v", r)
-		}
-	}()
-
 	err := repo.UpdateTicket(app.Ticket{ID: 9999})
 	if err == nil {
 		t.Fatal("expected non-existent ticket update to fail")
@@ -132,15 +124,7 @@ func testTicketUpdateNonExistent(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test - memory implementation panics
 func testTicketDeleteNonExistent(t *testing.T, repo app.Repository) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			t.Logf("[Characterisation Test] recovered panic: %v", r)
-		}
-	}()
-
 	err := repo.DeleteTicket(9999)
 	if err == nil {
 		t.Fatal("expected non-existent ticket update to fail")
