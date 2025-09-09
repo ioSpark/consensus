@@ -35,6 +35,15 @@ func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 }
 
 func (r *Repository) CreateTicket(ticket app.Ticket) (app.Ticket, error) {
+	_, err := r.User(string(ticket.RaisedBy))
+	if err != nil {
+		if errors.Is(err, app.ErrUserNotExist) {
+			return app.Ticket{}, err
+		} else {
+			panic(err)
+		}
+	}
+
 	if slices.ContainsFunc(r.tickets, func(t app.Ticket) bool {
 		if strings.EqualFold(t.Name, ticket.Name) {
 			return true
@@ -80,7 +89,16 @@ func (r *Repository) DeleteTicket(ID int) error {
 }
 
 func (r *Repository) UpdateTicket(ticket app.Ticket) error {
-	_, err := r.Ticket(ticket.ID)
+	_, err := r.User(string(ticket.RaisedBy))
+	if err != nil {
+		if errors.Is(err, app.ErrUserNotExist) {
+			return err
+		} else {
+			panic(err)
+		}
+	}
+
+	_, err = r.Ticket(ticket.ID)
 	if errors.Is(err, app.ErrTicketNotExist) {
 		return err
 	} else if err != nil {
