@@ -25,6 +25,27 @@ func (r *Repository) Ticket(ID int) (app.Ticket, error) {
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
+func (r *Repository) Vote(ID int, userID app.UserID, v int) (app.Ticket, error) {
+	t, err := r.Ticket(ID)
+	if errors.Is(err, app.ErrTicketNotExist) {
+		return app.Ticket{}, err
+	} else if err != nil {
+		panic(err)
+	}
+
+	p, err := app.NewPoint(v)
+	// Only returns ErrInvalidPoint
+	if errors.Is(err, app.ErrInvalidPoint) {
+		return app.Ticket{}, err
+	} else if err != nil {
+		panic(err)
+	}
+
+	t.Votes[userID] = p
+
+	return t, nil
+}
+
 func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	for _, t := range r.tickets {
 		if t.Name == name {

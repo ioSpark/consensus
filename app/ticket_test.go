@@ -5,7 +5,39 @@ import (
 	"testing"
 
 	"consensus/app"
+	"consensus/repo/memory"
 )
+
+// TODO: These are the same functions used in the repo tests
+func createUser(t *testing.T, repo app.Repository, name string) *app.UserID {
+	t.Helper()
+
+	u := app.NewUser(name)
+	err := repo.CreateUser(u)
+	if err != nil {
+		t.Fatalf("create user '%s' failed: %v", name, err)
+	}
+
+	return &u
+}
+
+func createTicket(
+	t *testing.T,
+	repo app.Repository,
+	name string,
+	user app.UserID,
+) *app.Ticket {
+	t.Helper()
+
+	ticket, err := repo.CreateTicket(
+		app.NewTicket(name, "http://whatever"+name, user),
+	)
+	if err != nil {
+		t.Errorf("CreateTicket failed: %v", err)
+	}
+
+	return &ticket
+}
 
 type mode struct {
 	Input  []int
@@ -46,20 +78,32 @@ func TestMode(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		dummyUser := app.NewUser("reporter")
-		ticket := app.NewTicket("a", "b", dummyUser)
+	repo := memory.NewRepository()
+	reporter := createUser(t, repo, "reporter")
 
-		for i, input := range test.Input {
-			u := app.NewUser(fmt.Sprintf("user-%d", i))
+	for iTicket, test := range tests {
+		ticket := createTicket(
+			t,
+			repo,
+			fmt.Sprintf("test-ticket-%d", iTicket),
+			*reporter,
+		)
 
-			err := ticket.Vote(u, input)
+		for iInput, input := range test.Input {
+			u := createUser(t, repo, fmt.Sprintf("user-%d-%d", iTicket, iInput))
+
+			_, err := repo.Vote(ticket.ID, *u, input)
 			if err != nil {
 				t.Errorf("couldn't add point %d: %s", input, err)
 			}
 		}
 
-		result := ticket.Mode()
+		refreshed, err := repo.Ticket(ticket.ID)
+		if err != nil {
+			t.Fatalf("get ticket failed after pointing: %v", err)
+		}
+
+		result := refreshed.Mode()
 		if len(test.Output) != len(result) {
 			t.Errorf("mismatched results, expected %v, got %v", test.Output, result)
 		}
@@ -74,18 +118,20 @@ func TestMode(t *testing.T) {
 }
 
 func TestVoted(t *testing.T) {
-	u := app.NewUser("test")
-	ticket := app.NewTicket("a", "b", u)
+	repo := memory.NewRepository()
+	u := createUser(t, repo, "test")
 
-	if ticket.Voted(u) != false {
+	ticket := createTicket(t, repo, "test-ticket", *u)
+
+	if ticket.Voted(*u) != false {
 		t.Error("voted is True, but we haven't voted")
 	}
 
-	err := ticket.Vote(u, 2)
+	refreshed, err := repo.Vote(ticket.ID, *u, 2)
 	if err != nil {
 		t.Errorf("unexpected error while pointing: %s", err)
 	}
-	if ticket.Voted(u) != true {
+	if refreshed.Voted(*u) != true {
 		t.Error("voted is False, but we have voted")
 	}
 }

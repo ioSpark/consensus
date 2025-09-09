@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 )
@@ -17,6 +16,7 @@ type TicketRepository interface {
 	Ticket(ID int) (Ticket, error)
 	TicketByName(name string) (Ticket, error)
 	Tickets() []Ticket
+	Vote(ID int, user UserID, value int) (Ticket, error)
 	// TODO: Should we accept parameters and create our own struct?
 	CreateTicket(t Ticket) (Ticket, error)
 	DeleteTicket(ID int) error
@@ -30,19 +30,6 @@ type Ticket struct {
 	RaisedBy UserID
 	Votes    map[UserID]Point
 	Revealed bool
-}
-
-func (t *Ticket) Vote(userID UserID, v int) error {
-	p, err := NewPoint(v)
-	// Only returns ErrInvalidPoint
-	if errors.Is(err, ErrInvalidPoint) {
-		return err
-	} else if err != nil {
-		panic(err)
-	}
-
-	t.Votes[userID] = p
-	return nil
 }
 
 func (t *Ticket) CanReveal(userID UserID) error {

@@ -35,7 +35,7 @@ func pointTicketHandler(
 	ticket := r.Context().Value(contextTicket).(app.Ticket)
 
 	// TODO: Is converting from int64 to int like this safe? (probably)
-	err = ticket.Vote(userID, int(value))
+	votedTicket, err := repo.Vote(ticket.ID, userID, int(value))
 	if err == app.ErrInvalidPoint {
 		return g.Textf(
 				"invalid point value %d",
@@ -47,12 +47,7 @@ func pointTicketHandler(
 		panic(err)
 	}
 
-	err = repo.UpdateTicket(ticket)
-	if err != nil {
-		panic(err)
-	}
-
-	return html.TicketRow(ticket, userID, repo.Users()), nil
+	return html.TicketRow(votedTicket, userID, repo.Users()), nil
 }
 
 func revealPointsHandler(
