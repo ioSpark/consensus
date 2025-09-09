@@ -8,11 +8,14 @@ import (
 )
 
 func (r *Repository) Users() []app.UserID {
-	return r.users
+	// Probably a more efficient way of doing this
+	s := make([]app.UserID, len(r.users))
+	copy(s, r.users)
+	return s
 }
 
 func (r *Repository) User(name string) (app.UserID, error) {
-	for _, u := range r.Users() {
+	for _, u := range r.users {
 		if string(u) == name {
 			return u, nil
 		}

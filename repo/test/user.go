@@ -85,7 +85,6 @@ func testUserCreateDuplicate(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test - memory implementation leaks
 func testUserNoLeakage(t *testing.T, repo app.Repository) {
 	_ = repo.CreateUser("1")
 	_ = repo.CreateUser("2")
@@ -97,11 +96,11 @@ func testUserNoLeakage(t *testing.T, repo app.Repository) {
 
 	users[0] = "3"
 
-	refetch, err := repo.User("3")
+	refetch, err := repo.User("1")
 	if err != nil {
 		t.Fatalf("fetch failed: %v", err)
 	}
-	if refetch != "3" {
-		t.Errorf("expected leakage %s, got %s", "3", refetch)
+	if refetch != "1" {
+		t.Errorf("user mutation leak %s, got %s", "1", refetch)
 	}
 }

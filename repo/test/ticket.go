@@ -133,7 +133,6 @@ func testTicketDeleteNonExistent(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test - memory implementation leaks
 func testTicketNoLeakage(t *testing.T, repo app.Repository) {
 	t1 := createTicket(t, repo, "1")
 	_ = createTicket(t, repo, "2")
@@ -149,7 +148,7 @@ func testTicketNoLeakage(t *testing.T, repo app.Repository) {
 	if err != nil {
 		t.Fatalf("fetch failed: %v", err)
 	}
-	if refetch.Name != "1-MODIFIED" {
-		t.Errorf("expected mutation leak %s, got %s", "1-MODIFIED", refetch.Name)
+	if refetch.Name != "1" {
+		t.Errorf("ticket mutation leak %s, got %s", "1", refetch.Name)
 	}
 }

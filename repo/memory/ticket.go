@@ -9,11 +9,14 @@ import (
 )
 
 func (r *Repository) Tickets() []app.Ticket {
-	return r.tickets
+	// Probably a more efficient way of doing this
+	s := make([]app.Ticket, len(r.tickets))
+	copy(s, r.tickets)
+	return s
 }
 
 func (r *Repository) Ticket(ID int) (app.Ticket, error) {
-	for _, t := range r.Tickets() {
+	for _, t := range r.tickets {
 		if t.ID == ID {
 			return t, nil
 		}
@@ -22,7 +25,7 @@ func (r *Repository) Ticket(ID int) (app.Ticket, error) {
 }
 
 func (r *Repository) TicketByName(name string) (app.Ticket, error) {
-	for _, t := range r.Tickets() {
+	for _, t := range r.tickets {
 		if t.Name == name {
 			return t, nil
 		}
