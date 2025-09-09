@@ -16,7 +16,6 @@ func NewUser(raw string) UserID {
 	return UserID(raw)
 }
 
-// TODO: Determine what should be pointers
 type UserRepository interface {
 	User(ID string) (UserID, error)
 	Users() []UserID

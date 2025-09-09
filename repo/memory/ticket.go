@@ -8,29 +8,29 @@ import (
 	"consensus/app"
 )
 
-func (r *Repository) Tickets() []*app.Ticket {
+func (r *Repository) Tickets() []app.Ticket {
 	return r.tickets
 }
 
-func (r *Repository) Ticket(ID int) (*app.Ticket, error) {
+func (r *Repository) Ticket(ID int) (app.Ticket, error) {
 	for _, t := range r.Tickets() {
 		if t.ID == ID {
 			return t, nil
 		}
 	}
-	return nil, app.ErrTicketNotExist
+	return app.Ticket{}, app.ErrTicketNotExist
 }
 
-func (r *Repository) TicketByName(name string) (*app.Ticket, error) {
+func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	for _, t := range r.Tickets() {
 		if t.Name == name {
 			return t, nil
 		}
 	}
-	return nil, app.ErrTicketNotExist
+	return app.Ticket{}, app.ErrTicketNotExist
 }
 
-func (r *Repository) CreateTicket(t app.Ticket) (*app.Ticket, error) {
+func (r *Repository) CreateTicket(t app.Ticket) (app.Ticket, error) {
 	// Generate un-used ID
 	var newID int
 	// Can be improved
@@ -46,8 +46,8 @@ func (r *Repository) CreateTicket(t app.Ticket) (*app.Ticket, error) {
 
 	t.ID = newID
 
-	r.tickets = append(r.tickets, &t)
-	return &t, nil
+	r.tickets = append(r.tickets, t)
+	return t, nil
 }
 
 func (r *Repository) DeleteTicket(ID int) error {
@@ -59,32 +59,27 @@ func (r *Repository) DeleteTicket(ID int) error {
 	}
 
 	// Not the best way to do this
-	r.tickets = slices.DeleteFunc(r.tickets, func(t *app.Ticket) bool {
+	r.tickets = slices.DeleteFunc(r.tickets, func(t app.Ticket) bool {
 		return t.ID == ID
 	})
 
 	return nil
 }
 
-func (r *Repository) UpdateTicket(t app.Ticket) error {
-	_, err := r.Ticket(t.ID)
+func (r *Repository) UpdateTicket(ticket app.Ticket) error {
+	_, err := r.Ticket(ticket.ID)
 	if errors.Is(err, app.ErrTicketNotExist) {
 		return err
 	} else if err != nil {
 		panic(err)
 	}
 
-	err = r.DeleteTicket(t.ID)
-	if err != nil {
-		panic(err)
+	// Maybe a better way of doing this
+	for i, t := range r.tickets {
+		if t.ID == ticket.ID {
+			r.tickets[i] = ticket
+		}
 	}
-
-	newTicket, err := r.CreateTicket(t)
-	if err != nil {
-		panic(err)
-	}
-
-	newTicket.ID = t.ID
 
 	return nil
 }

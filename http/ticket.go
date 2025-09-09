@@ -32,7 +32,7 @@ func pointTicketHandler(
 	}
 
 	userID := r.Context().Value(contextUser).(app.UserID)
-	ticket := r.Context().Value(contextTicket).(*app.Ticket)
+	ticket := r.Context().Value(contextTicket).(app.Ticket)
 
 	// TODO: Is converting from int64 to int like this safe? (probably)
 	err = ticket.Vote(userID, int(value))
@@ -47,7 +47,7 @@ func pointTicketHandler(
 		panic(err)
 	}
 
-	err = repo.UpdateTicket(*ticket)
+	err = repo.UpdateTicket(ticket)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +61,7 @@ func revealPointsHandler(
 	repo app.Repository,
 ) (g.Node, error) {
 	userID := r.Context().Value(contextUser).(app.UserID)
-	ticket := r.Context().Value(contextTicket).(*app.Ticket)
+	ticket := r.Context().Value(contextTicket).(app.Ticket)
 
 	// TODO: Return HTMX error
 	err := ticket.Reveal(userID)
@@ -77,7 +77,7 @@ func revealPointsHandler(
 		panic(err)
 	}
 
-	err = repo.UpdateTicket(*ticket)
+	err = repo.UpdateTicket(ticket)
 	if err != nil {
 		panic(err)
 	}

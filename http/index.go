@@ -37,7 +37,7 @@ func revealedHandler(
 			if !t.Revealed {
 				continue
 			}
-			group = append(group, html.RevealedRow(*t, userID))
+			group = append(group, html.RevealedRow(t, userID))
 
 		}
 		return group, nil

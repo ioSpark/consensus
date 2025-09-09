@@ -13,7 +13,7 @@ import (
 	gh "maragu.dev/gomponents/html"
 )
 
-func TicketRow(t *app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
+func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 	canReveal := t.CanReveal(userID)
 
 	return gh.Tr(

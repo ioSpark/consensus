@@ -13,13 +13,12 @@ var (
 	ErrUserCantReveal      = fmt.Errorf("user did not raise ticket, cannot reveal")
 )
 
-// TODO: Determine what should be pointers
 type TicketRepository interface {
-	Ticket(ID int) (*Ticket, error)
-	TicketByName(name string) (*Ticket, error)
-	Tickets() []*Ticket
+	Ticket(ID int) (Ticket, error)
+	TicketByName(name string) (Ticket, error)
+	Tickets() []Ticket
 	// TODO: Should we accept parameters and create our own struct?
-	CreateTicket(t Ticket) (*Ticket, error)
+	CreateTicket(t Ticket) (Ticket, error)
 	DeleteTicket(ID int) error
 	UpdateTicket(t Ticket) error
 }

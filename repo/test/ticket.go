@@ -18,7 +18,7 @@ func createTicket(t *testing.T, repo app.Repository, name string) *app.Ticket {
 		t.Errorf("CreateTicket failed: %v", err)
 	}
 
-	return ticket
+	return &ticket
 }
 
 func init() {
@@ -50,7 +50,7 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 		t.Errorf("expected name %s, got %s", "i am the first ticket", fetched.Name)
 	}
 
-	if !slices.ContainsFunc(repo.Tickets(), func(t *app.Ticket) bool {
+	if !slices.ContainsFunc(repo.Tickets(), func(t app.Ticket) bool {
 		return t.ID == t1.ID
 	}) {
 		t.Errorf("Tickets() missing created ticket: %d", t1.ID)

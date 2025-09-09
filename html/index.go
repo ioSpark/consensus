@@ -11,7 +11,7 @@ import (
 func Index(
 	props PageProps,
 	userID app.UserID,
-	tickets []*app.Ticket,
+	tickets []app.Ticket,
 	users []app.UserID,
 ) g.Node {
 	props.Title = "Consensus"
@@ -56,7 +56,7 @@ func Index(
 	)
 }
 
-func Revealed(props PageProps, userID app.UserID, tickets []*app.Ticket) g.Node {
+func Revealed(props PageProps, userID app.UserID, tickets []app.Ticket) g.Node {
 	props.Title = "Consensus - Revealed"
 	return page(
 		props,
@@ -65,7 +65,7 @@ func Revealed(props PageProps, userID app.UserID, tickets []*app.Ticket) g.Node 
 	)
 }
 
-func revealedTable(user app.UserID, tickets []*app.Ticket) g.Node {
+func revealedTable(user app.UserID, tickets []app.Ticket) g.Node {
 	// TODO: Sort
 	return gh.Table(
 		gh.Class("w-full border-separate border-spacing-y-1 border border-transparent"),
@@ -85,9 +85,9 @@ func revealedTable(user app.UserID, tickets []*app.Ticket) g.Node {
 			hx.Trigger("newRevealed from:body, every 5s"),
 			hx.Get("/revealed"),
 			g.Attr("_", hyperscriptTable),
-			g.Map(tickets, func(t *app.Ticket) g.Node {
+			g.Map(tickets, func(t app.Ticket) g.Node {
 				if t.Revealed {
-					return RevealedRow(*t, user)
+					return RevealedRow(t, user)
 				}
 				return g.Group{}
 			}),
@@ -97,12 +97,12 @@ func revealedTable(user app.UserID, tickets []*app.Ticket) g.Node {
 
 func ToPointPartial(
 	user app.UserID,
-	tickets []*app.Ticket,
+	tickets []app.Ticket,
 	allUsers []app.UserID,
 ) g.Node {
 	// TODO: Sort
 	return g.Group{
-		g.Map(tickets, func(t *app.Ticket) g.Node {
+		g.Map(tickets, func(t app.Ticket) g.Node {
 			if !t.Revealed {
 				return TicketRow(t, user, allUsers)
 			}
