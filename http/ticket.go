@@ -128,17 +128,20 @@ func ticketCtx(repo app.Repository, next http.Handler) http.Handler {
 }
 
 func Ticket(r chi.Router, s app.Repository) {
-	r.Post("/ticket", provideRepo(s, newTicketHandler))
-	r.Route("/ticket/{ID}", func(r chi.Router) {
+	r.Route("/ticket", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return userCtx(s, next)
 		})
-		r.Use(func(next http.Handler) http.Handler {
-			return ticketCtx(s, next)
-		})
+		r.Post("/", provideRepo(s, newTicketHandler))
 
-		r.Put("/point/{value}", provideRepo(s, pointTicketHandler))
-		r.Post("/reveal", provideRepo(s, revealPointsHandler))
-		// r.Delete("/", deleteTicketHandler)
+		r.Route("/{ID}", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return ticketCtx(s, next)
+			})
+
+			r.Put("/point/{value}", provideRepo(s, pointTicketHandler))
+			r.Post("/reveal", provideRepo(s, revealPointsHandler))
+			// r.Delete("/", deleteTicketHandler)
+		})
 	})
 }
