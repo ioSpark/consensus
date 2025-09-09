@@ -154,6 +154,25 @@ func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
 		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
 	}
+
+	newTicket1.Name = "never before seen name"
+	_, err = repo.CreateTicket(newTicket1)
+	if err == nil {
+		t.Errorf("expected duplicate ticket creation to fail")
+	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
+		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
+	}
+
+	// Revert to existing name
+	newTicket1.Name = "1"
+
+	newTicket1.Link = "never before seen link"
+	_, err = repo.CreateTicket(newTicket1)
+	if err == nil {
+		t.Errorf("expected duplicate ticket creation to fail")
+	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
+		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
+	}
 }
 
 func testTicketUpdateUserNotExist(t *testing.T, repo app.Repository) {
