@@ -2,6 +2,7 @@ package test
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -88,8 +89,13 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 func testTicketCreateGenerateUniqueIDs(t *testing.T, repo app.Repository) {
 	seen := make(map[int]struct{})
 	const n = 8192
+	user := app.NewUser("1")
 	for i := range n {
-		tk := createTicket(t, repo, string(rune(i)))
+		num := fmt.Sprintf("%d", i)
+		tk, err := repo.CreateTicket(app.NewTicket(num, "whatever-"+num, user))
+		if err != nil {
+			t.Fatalf("create ticket failed: %v", err)
+		}
 		if _, exists := seen[tk.ID]; exists {
 			t.Fatalf("duplicate ID generated: %d", tk.ID)
 		}
@@ -101,7 +107,6 @@ func testTicketCreateGenerateUniqueIDs(t *testing.T, repo app.Repository) {
 	}
 }
 
-// TODO: Characterisation test. Duplicate tickets are possible.
 func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	newTicket1 := app.NewTicket("1", "whatever", "1")
 	_, err := repo.CreateTicket(newTicket1)
@@ -110,8 +115,10 @@ func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	}
 
 	_, err = repo.CreateTicket(newTicket1)
-	if err != nil {
-		t.Fatalf("expected to be able to create duplicate ticket: %v", err)
+	if err == nil {
+		t.Errorf("expected duplicate ticket creation to fail")
+	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
+		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand/v2"
 	"slices"
+	"strings"
 
 	"consensus/app"
 )
@@ -33,7 +34,16 @@ func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
-func (r *Repository) CreateTicket(t app.Ticket) (app.Ticket, error) {
+func (r *Repository) CreateTicket(ticket app.Ticket) (app.Ticket, error) {
+	if slices.ContainsFunc(r.tickets, func(t app.Ticket) bool {
+		if strings.EqualFold(t.Name, ticket.Name) {
+			return true
+		}
+		return strings.EqualFold(t.Link, ticket.Link)
+	}) {
+		return app.Ticket{}, app.ErrTicketAlreadyExists
+	}
+
 	// Generate un-used ID
 	var newID int
 	// Can be improved
@@ -47,10 +57,10 @@ func (r *Repository) CreateTicket(t app.Ticket) (app.Ticket, error) {
 		}
 	}
 
-	t.ID = newID
+	ticket.ID = newID
 
-	r.tickets = append(r.tickets, t)
-	return t, nil
+	r.tickets = append(r.tickets, ticket)
+	return ticket, nil
 }
 
 func (r *Repository) DeleteTicket(ID int) error {

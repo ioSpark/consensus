@@ -80,7 +80,7 @@ func userImage(ID app.UserID, includeName bool) g.Node {
 
 // TODO: Determine if we need the tmp variable or not
 const hyperscriptTable = `
-	on htmx:beforeSwap if target is me
+	on htmx:beforeSwap if target is me and not detail.isError
 		make a <tbody/> called tmp
 		put event.detail.xhr.responseText into tmp.innerHTML
 
