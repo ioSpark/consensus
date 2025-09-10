@@ -59,7 +59,7 @@ func revealPointsHandler(
 	ticket := r.Context().Value(contextTicket).(app.Ticket)
 
 	// TODO: Return HTMX error
-	err := ticket.Reveal(userID)
+	_, err := repo.Reveal(ticket.ID, userID)
 	if err == app.ErrUserCantReveal {
 		return g.Text(
 				"user did not raise ticket, cannot reveal",
@@ -69,11 +69,6 @@ func revealPointsHandler(
 	} else if err == app.ErrCantRevealNoVotes {
 		return g.Text("no vots on ticket, cannot reveal"), httpError{http.StatusBadRequest}
 	} else if err != nil {
-		panic(err)
-	}
-
-	_, err = repo.UpdateTicket(ticket)
-	if err != nil {
 		panic(err)
 	}
 

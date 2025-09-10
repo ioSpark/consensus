@@ -77,6 +77,29 @@ func (r *Repository) Vote(ID int, userID app.UserID, v int) (app.Ticket, error) 
 	return refreshed, nil
 }
 
+func (r *Repository) Reveal(ID int, userID app.UserID) (app.Ticket, error) {
+	r.Lock()
+	defer r.Unlock()
+
+	ticket, err := r.ticketWithoutLock(ID)
+	if err != nil {
+		return app.Ticket{}, err
+	}
+
+	err = ticket.CanReveal(userID)
+	if err != nil {
+		return app.Ticket{}, err
+	}
+	ticket.Revealed = true
+
+	updated, err := r.updateTicketWithoutLock(ticket)
+	if err != nil {
+		return app.Ticket{}, err
+	}
+
+	return updated, nil
+}
+
 func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	r.RLock()
 	defer r.RUnlock()

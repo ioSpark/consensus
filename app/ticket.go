@@ -17,6 +17,7 @@ type TicketRepository interface {
 	TicketByName(name string) (Ticket, error)
 	Tickets() []Ticket
 	Vote(ID int, user UserID, value int) (Ticket, error)
+	Reveal(ID int, user UserID) (Ticket, error)
 	// TODO: Should we accept parameters and create our own struct?
 	CreateTicket(t Ticket) (Ticket, error)
 	DeleteTicket(ID int) error
@@ -38,15 +39,6 @@ func (t *Ticket) CanReveal(userID UserID) error {
 	} else if len(t.Votes) == 0 {
 		return ErrCantRevealNoVotes
 	}
-	return nil
-}
-
-func (t *Ticket) Reveal(userID UserID) error {
-	err := t.CanReveal(userID)
-	if err != nil {
-		return err
-	}
-	t.Revealed = true
 	return nil
 }
 

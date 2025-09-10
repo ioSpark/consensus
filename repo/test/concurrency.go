@@ -81,13 +81,9 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 						continue
 					}
 
-					err := rngTicket.Reveal(rngTicket.RaisedBy)
+					_, err := repo.Reveal(rngTicket.ID, rngTicket.RaisedBy)
 					if err != nil {
 						t.Errorf("could not reveal ticket: %v", err)
-					}
-					_, err = repo.UpdateTicket(rngTicket)
-					if err != nil {
-						t.Errorf("could not update ticket: %v", err)
 					}
 				}
 			}
