@@ -20,7 +20,7 @@ type TicketRepository interface {
 	// TODO: Should we accept parameters and create our own struct?
 	CreateTicket(t Ticket) (Ticket, error)
 	DeleteTicket(ID int) error
-	UpdateTicket(t Ticket) error
+	UpdateTicket(t Ticket) (Ticket, error)
 }
 
 type Ticket struct {

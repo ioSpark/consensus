@@ -80,9 +80,16 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 
 	newName := "i am renaming myself to Ticket Prime"
 	t1.Name = newName
-	err = repo.UpdateTicket(*t1)
+	updated, err := repo.UpdateTicket(*t1)
 	if err != nil {
 		t.Fatalf("error updating ticket with new name: %v", err)
+	}
+	if updated.Name != newName {
+		t.Fatalf(
+			"expected updated ticket to have newName %s, got %s",
+			newName,
+			updated.Name,
+		)
 	}
 
 	fetched, err = repo.Ticket(t1.ID)
@@ -186,7 +193,7 @@ func testTicketUpdateUserNotExist(t *testing.T, repo app.Repository) {
 	u2 := app.NewUser("2")
 	t1.RaisedBy = u2
 
-	err = repo.UpdateTicket(t1)
+	_, err = repo.UpdateTicket(t1)
 	if err == nil {
 		t.Errorf("expected update ticket to fail")
 	} else if !errors.Is(err, app.ErrUserNotExist) {
@@ -198,7 +205,7 @@ func testTicketUpdateNonExistent(t *testing.T, repo app.Repository) {
 	// Create valid user, as we already test for non-existent user
 	u1 := createUser(t, repo, "test")
 
-	err := repo.UpdateTicket(app.Ticket{ID: 9999, RaisedBy: *u1})
+	_, err := repo.UpdateTicket(app.Ticket{ID: 9999, RaisedBy: *u1})
 	if err == nil {
 		t.Fatal("expected non-existent ticket update to fail")
 	} else if !errors.Is(err, app.ErrTicketNotExist) {

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	"maps"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -9,24 +10,49 @@ import (
 	"consensus/app"
 )
 
-func (r *Repository) Tickets() []app.Ticket {
-	// Probably a more efficient way of doing this
-	s := make([]app.Ticket, len(r.tickets))
-	copy(s, r.tickets)
-	return s
+// cloneTicket returns a safe copy of the provided ticket.
+func cloneTicket(t app.Ticket) app.Ticket {
+	clone := t
+	if t.Votes != nil {
+		clone.Votes = make(map[app.UserID]app.Point, len(t.Votes))
+		maps.Copy(clone.Votes, t.Votes)
+	}
+	return clone
 }
 
-func (r *Repository) Ticket(ID int) (app.Ticket, error) {
+func (r *Repository) Tickets() []app.Ticket {
+	r.RLock()
+	defer r.RUnlock()
+
+	dst := make([]app.Ticket, len(r.tickets))
+	for i, t := range r.tickets {
+		dst[i] = cloneTicket(t)
+	}
+
+	return dst
+}
+
+func (r *Repository) ticketWithoutLock(ID int) (app.Ticket, error) {
 	for _, t := range r.tickets {
 		if t.ID == ID {
-			return t, nil
+			return cloneTicket(t), nil
 		}
 	}
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
+func (r *Repository) Ticket(ID int) (app.Ticket, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	return r.ticketWithoutLock(ID)
+}
+
 func (r *Repository) Vote(ID int, userID app.UserID, v int) (app.Ticket, error) {
-	t, err := r.Ticket(ID)
+	r.Lock()
+	defer r.Unlock()
+
+	t, err := r.ticketWithoutLock(ID)
 	if errors.Is(err, app.ErrTicketNotExist) {
 		return app.Ticket{}, err
 	} else if err != nil {
@@ -43,20 +69,30 @@ func (r *Repository) Vote(ID int, userID app.UserID, v int) (app.Ticket, error) 
 
 	t.Votes[userID] = p
 
-	return t, nil
+	refreshed, err := r.updateTicketWithoutLock(t)
+	if err != nil {
+		return app.Ticket{}, err
+	}
+
+	return refreshed, nil
 }
 
 func (r *Repository) TicketByName(name string) (app.Ticket, error) {
+	r.RLock()
+	defer r.RUnlock()
 	for _, t := range r.tickets {
 		if t.Name == name {
-			return t, nil
+			return cloneTicket(t), nil
 		}
 	}
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
 func (r *Repository) CreateTicket(ticket app.Ticket) (app.Ticket, error) {
-	_, err := r.User(string(ticket.RaisedBy))
+	r.Lock()
+	defer r.Unlock()
+
+	_, err := r.userWithoutLock(string(ticket.RaisedBy))
 	if err != nil {
 		if errors.Is(err, app.ErrUserNotExist) {
 			return app.Ticket{}, err
@@ -79,7 +115,7 @@ func (r *Repository) CreateTicket(ticket app.Ticket) (app.Ticket, error) {
 	// Can be improved
 	for {
 		newID = rand.IntN(8192) // Enough space without IDs being unweidly
-		_, err := r.Ticket(newID)
+		_, err := r.ticketWithoutLock(newID)
 		if errors.Is(err, app.ErrTicketNotExist) {
 			break
 		} else if err != nil {
@@ -90,18 +126,20 @@ func (r *Repository) CreateTicket(ticket app.Ticket) (app.Ticket, error) {
 	ticket.ID = newID
 
 	r.tickets = append(r.tickets, ticket)
-	return ticket, nil
+	return cloneTicket(ticket), nil
 }
 
 func (r *Repository) DeleteTicket(ID int) error {
-	_, err := r.Ticket(ID)
+	r.Lock()
+	defer r.Unlock()
+
+	_, err := r.ticketWithoutLock(ID)
 	if errors.Is(err, app.ErrTicketNotExist) {
 		return err
 	} else if err != nil {
 		panic(err)
 	}
 
-	// Not the best way to do this
 	r.tickets = slices.DeleteFunc(r.tickets, func(t app.Ticket) bool {
 		return t.ID == ID
 	})
@@ -109,29 +147,44 @@ func (r *Repository) DeleteTicket(ID int) error {
 	return nil
 }
 
-func (r *Repository) UpdateTicket(ticket app.Ticket) error {
-	_, err := r.User(string(ticket.RaisedBy))
+func (r *Repository) updateTicketWithoutLock(ticket app.Ticket) (app.Ticket, error) {
+	_, err := r.userWithoutLock(string(ticket.RaisedBy))
 	if err != nil {
 		if errors.Is(err, app.ErrUserNotExist) {
-			return err
+			return app.Ticket{}, err
 		} else {
 			panic(err)
 		}
 	}
 
-	_, err = r.Ticket(ticket.ID)
+	_, err = r.ticketWithoutLock(ticket.ID)
 	if errors.Is(err, app.ErrTicketNotExist) {
-		return err
+		return app.Ticket{}, err
 	} else if err != nil {
 		panic(err)
 	}
 
-	// Maybe a better way of doing this
-	for i, t := range r.tickets {
-		if t.ID == ticket.ID {
+	// The ticket we were provided could be out of date.
+	// Try to merge where possible, but the provided ticket will take precedence.
+	for i := range r.tickets {
+		if r.tickets[i].ID == ticket.ID {
+			mergedVotes := make(map[app.UserID]app.Point)
+			maps.Copy(mergedVotes, r.tickets[i].Votes)
+			maps.Copy(mergedVotes, ticket.Votes)
+
 			r.tickets[i] = ticket
+			r.tickets[i].Votes = mergedVotes
+
+			return cloneTicket(r.tickets[i]), nil
 		}
 	}
 
-	return nil
+	return app.Ticket{}, app.ErrTicketNotExist
+}
+
+func (r *Repository) UpdateTicket(ticket app.Ticket) (app.Ticket, error) {
+	r.Lock()
+	defer r.Unlock()
+
+	return r.updateTicketWithoutLock(ticket)
 }

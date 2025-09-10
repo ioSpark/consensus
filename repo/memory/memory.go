@@ -1,13 +1,16 @@
 package memory
 
 import (
+	"sync"
+
 	"consensus/app"
 )
 
-// TODO: Unsafe, temporary in-memory "storage" layer. Could be coded better
+// Non-persistent in-memory repository
 type Repository struct {
 	tickets []app.Ticket
 	users   []app.UserID
+	sync.RWMutex
 }
 
 func NewRepository() *Repository {

@@ -72,7 +72,7 @@ func revealPointsHandler(
 		panic(err)
 	}
 
-	err = repo.UpdateTicket(ticket)
+	_, err = repo.UpdateTicket(ticket)
 	if err != nil {
 		panic(err)
 	}
