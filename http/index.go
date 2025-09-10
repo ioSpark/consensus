@@ -58,7 +58,7 @@ func newTicketHandler(
 	}
 
 	userID := r.Context().Value(contextUser).(app.UserID)
-	_, err := repo.CreateTicket(app.NewTicket(title, link, userID))
+	_, err := repo.CreateTicket(title, link, userID)
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		// TODO: Might not need to exist, since all tickets are based on ID

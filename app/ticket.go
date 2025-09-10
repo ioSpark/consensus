@@ -16,12 +16,13 @@ type TicketRepository interface {
 	Ticket(ID int) (Ticket, error)
 	TicketByName(name string) (Ticket, error)
 	Tickets() []Ticket
+
 	Vote(ID int, user UserID, value int) (Ticket, error)
 	Reveal(ID int, user UserID) (Ticket, error)
-	// TODO: Should we accept parameters and create our own struct?
-	CreateTicket(t Ticket) (Ticket, error)
+
+	CreateTicket(name, link string, user UserID) (Ticket, error)
 	DeleteTicket(ID int) error
-	UpdateTicket(t Ticket) (Ticket, error)
+	UpdateTicket(ID int, name, link string) (Ticket, error)
 }
 
 type Ticket struct {
@@ -89,8 +90,9 @@ func (t *Ticket) Voted(userID UserID) bool {
 	return ok
 }
 
-func NewTicket(name, link string, userID UserID) Ticket {
+func NewTicket(ID int, name, link string, userID UserID) Ticket {
 	return Ticket{
+		ID:       ID,
 		Name:     name,
 		Link:     link,
 		RaisedBy: userID,

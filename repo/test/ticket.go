@@ -29,9 +29,7 @@ func createTicket(
 ) *app.Ticket {
 	t.Helper()
 
-	ticket, err := repo.CreateTicket(
-		app.NewTicket(name, "http://whatever"+name, user),
-	)
+	ticket, err := repo.CreateTicket(name, "http://whatever"+name, user)
 	if err != nil {
 		t.Errorf("CreateTicket failed: %v", err)
 	}
@@ -44,7 +42,6 @@ func init() {
 	registerRepoTest("TicketCreateGenerateUniqueIDs", testTicketCreateGenerateUniqueIDs)
 	registerRepoTest("TicketNoLeakage", testTicketNoLeakage)
 	registerRepoTest("TicketUpdateNonExistent", testTicketUpdateNonExistent)
-	registerRepoTest("TicketUpdateUserNotExist", testTicketUpdateUserNotExist)
 	registerRepoTest("TicketDeleteNonExistent", testTicketDeleteNonExistent)
 	registerRepoTest("TicketCRUD", testTicketCRUD)
 	registerRepoTest("TicketCreateDuplicate", testTicketCreateDuplicate)
@@ -79,8 +76,7 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 	}
 
 	newName := "i am renaming myself to Ticket Prime"
-	t1.Name = newName
-	updated, err := repo.UpdateTicket(*t1)
+	updated, err := repo.UpdateTicket(t1.ID, newName, t1.Link)
 	if err != nil {
 		t.Fatalf("error updating ticket with new name: %v", err)
 	}
@@ -114,8 +110,7 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 }
 
 func testTicketCreateUserNotExist(t *testing.T, repo app.Repository) {
-	t1 := app.NewTicket("test", "test", app.NewUser("1"))
-	_, err := repo.CreateTicket(t1)
+	_, err := repo.CreateTicket("test", "test", app.NewUser("1"))
 	if err == nil {
 		t.Errorf("expected create ticket to fail")
 	} else if !errors.Is(err, app.ErrUserNotExist) {
@@ -131,7 +126,7 @@ func testTicketCreateGenerateUniqueIDs(t *testing.T, repo app.Repository) {
 	const n = 8192
 	for i := range n {
 		num := fmt.Sprintf("%d", i)
-		tk, err := repo.CreateTicket(app.NewTicket(num, "whatever-"+num, *user))
+		tk, err := repo.CreateTicket(num, "whatever-"+num, *user)
 		if err != nil {
 			t.Fatalf("create ticket failed: %v", err)
 		}
@@ -149,63 +144,38 @@ func testTicketCreateGenerateUniqueIDs(t *testing.T, repo app.Repository) {
 func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "1")
 
-	newTicket1 := app.NewTicket("1", "whatever", *user)
-	_, err := repo.CreateTicket(newTicket1)
+	name := "initial"
+	link := "whatever"
+
+	_, err := repo.CreateTicket(name, link, *user)
 	if err != nil {
 		t.Errorf("CreateTicket failed: %v", err)
 	}
 
-	_, err = repo.CreateTicket(newTicket1)
+	_, err = repo.CreateTicket(name, link, *user)
 	if err == nil {
 		t.Errorf("expected duplicate ticket creation to fail")
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
 		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
 	}
 
-	newTicket1.Name = "never before seen name"
-	_, err = repo.CreateTicket(newTicket1)
+	_, err = repo.CreateTicket("never before seen name", link, *user)
 	if err == nil {
 		t.Errorf("expected duplicate ticket creation to fail")
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
 		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
 	}
 
-	// Revert to existing name
-	newTicket1.Name = "1"
-
-	newTicket1.Link = "never before seen link"
-	_, err = repo.CreateTicket(newTicket1)
+	_, err = repo.CreateTicket(name, "never before seen link", *user)
 	if err == nil {
 		t.Errorf("expected duplicate ticket creation to fail")
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
 		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
-	}
-}
-
-func testTicketUpdateUserNotExist(t *testing.T, repo app.Repository) {
-	u1 := createUser(t, repo, "1")
-	t1 := app.NewTicket("test", "test", *u1)
-	_, err := repo.CreateTicket(t1)
-	if err != nil {
-		t.Errorf("create ticket failed %v", err)
-	}
-
-	u2 := app.NewUser("2")
-	t1.RaisedBy = u2
-
-	_, err = repo.UpdateTicket(t1)
-	if err == nil {
-		t.Errorf("expected update ticket to fail")
-	} else if !errors.Is(err, app.ErrUserNotExist) {
-		t.Errorf("expected ErrUserNotExist, got %v", err)
 	}
 }
 
 func testTicketUpdateNonExistent(t *testing.T, repo app.Repository) {
-	// Create valid user, as we already test for non-existent user
-	u1 := createUser(t, repo, "test")
-
-	_, err := repo.UpdateTicket(app.Ticket{ID: 9999, RaisedBy: *u1})
+	_, err := repo.UpdateTicket(9999, "whatever", "whatever")
 	if err == nil {
 		t.Fatal("expected non-existent ticket update to fail")
 	} else if !errors.Is(err, app.ErrTicketNotExist) {

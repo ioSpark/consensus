@@ -29,9 +29,7 @@ func createTicket(
 ) *app.Ticket {
 	t.Helper()
 
-	ticket, err := repo.CreateTicket(
-		app.NewTicket(name, "http://whatever"+name, user),
-	)
+	ticket, err := repo.CreateTicket(name, "http://whatever"+name, user)
 	if err != nil {
 		t.Errorf("CreateTicket failed: %v", err)
 	}

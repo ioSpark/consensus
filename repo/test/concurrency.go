@@ -46,12 +46,11 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 
 				switch rand.IntN(4) {
 				case 0: // Create ticket
-					ticket := app.NewTicket(
+					ticket, err := repo.CreateTicket(
 						fmt.Sprintf("ticket-w%d-%d", ID, i),
 						fmt.Sprintf("whatever-w%d-%d", ID, i),
 						rngUser,
 					)
-					_, err := repo.CreateTicket(ticket)
 					if err != nil {
 						t.Errorf("could not create ticket %s: %v", ticket.Name, err)
 					}
@@ -59,8 +58,11 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 					tickets := repo.Tickets()
 					rngTicket := tickets[rand.IntN(len(tickets))]
 
-					rngTicket.Name = fmt.Sprintf("updated by w-%d-%d", ID, i)
-					_, err := repo.UpdateTicket(rngTicket)
+					_, err := repo.UpdateTicket(
+						rngTicket.ID,
+						fmt.Sprintf("updated by w-%d-%d", ID, i),
+						fmt.Sprintf("link w-%d-%d", ID, i),
+					)
 					if err != nil {
 						t.Errorf("could not update ticket: %v", err)
 					}
