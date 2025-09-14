@@ -102,7 +102,7 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 }
 
 func InputRow(oob bool) g.Node {
-	inputClass := "px-1 border m-1 bg-neutral-50 focus:outline-none focus:border-emerald-500 focus:shadow-emerald-500 focus:shadow-lg/60"
+	inputClass := "w-full px-1 border m-1 bg-neutral-50 focus:outline-none focus:border-emerald-500 focus:shadow-emerald-500 focus:shadow-lg/60"
 
 	row := gh.Div(
 		gh.Class("my-2 py-1 border-y w-full"),
@@ -115,23 +115,43 @@ func InputRow(oob bool) g.Node {
 			hx.Post("/ticket"),
 
 			gh.H4(gh.Class("text-lg font-bold"), g.Text("New Ticket")),
-			gh.Input(
-				gh.Class(inputClass),
-				gh.Type("text"),
-				gh.Required(),
-				gh.Placeholder("Issue Title"),
-				gh.Name("title"),
-			),
-			gh.Input(
-				gh.Class(inputClass),
-				gh.Type("text"),
-				gh.Required(),
-				gh.Placeholder("https://link-to-issue.example"),
-				gh.Name("link"),
-			),
-			gh.Button(
-				gh.Class("bg-amber-100 hover:bg-amber-300 rounded px-1 cursor-pointer"),
-				g.Text("Create"),
+			gh.Div(
+				gh.Class("flex flex-row justify-between items-center"),
+				gh.Div(
+					gh.Class("w-full"),
+					gh.Div(
+						gh.Class("flex flex-row items-center"),
+						gh.Label(g.Text("Title"), gh.For("ticket-title")),
+						gh.Input(
+							gh.ID("ticket-title"),
+							gh.Class(inputClass),
+							gh.Type("text"),
+							gh.Required(),
+							gh.Placeholder("Uh oh, Bug! 🐛"),
+							gh.Name("title"),
+						),
+					),
+					gh.Div(
+						gh.Class("flex flex-row items-center"),
+						gh.Label(g.Text("Link"), gh.For("ticket-link")),
+						gh.Input(
+							gh.ID("ticket-link"),
+							gh.Class(inputClass),
+							gh.Type("text"),
+							gh.Required(),
+							gh.Placeholder(
+								"https://issue-tracker.example/bug-squash-123",
+							),
+							gh.Name("link"),
+						),
+					),
+				),
+				gh.Button(
+					gh.Class(
+						"min-h bg-amber-100 hover:bg-amber-300 rounded px-1 cursor-pointer",
+					),
+					g.Text("Create"),
+				),
 			),
 		),
 	)
