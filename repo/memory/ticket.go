@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"slices"
 	"strings"
+	"time"
 
 	"consensus/app"
 )
@@ -91,6 +92,7 @@ func (r *Repository) Reveal(ID int, userID app.UserID) (app.Ticket, error) {
 		return app.Ticket{}, err
 	}
 	ticket.Revealed = true
+	ticket.RevealedAt = time.Now().UTC()
 
 	updated, err := r.updateTicketWithoutLock(ticket)
 	if err != nil {

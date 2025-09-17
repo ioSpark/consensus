@@ -172,11 +172,17 @@ func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
 	for u, v := range t.Votes {
 		votes = append(votes, vote{u, v})
 	}
-	// Show largest values first
+	// Show largest values first, then by name.
 	slices.SortStableFunc(votes, func(a, b vote) int {
 		if a.Value < b.Value {
 			return 1
 		} else if a.Value > b.Value {
+			return -1
+		}
+
+		if a.User < b.User {
+			return 1
+		} else if a.User > b.User {
 			return -1
 		}
 		return 0

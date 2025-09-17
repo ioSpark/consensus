@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"slices"
+	"time"
 )
 
 var (
@@ -26,12 +27,14 @@ type TicketRepository interface {
 }
 
 type Ticket struct {
-	ID       int
-	Name     string
-	Link     string
-	RaisedBy UserID
-	Votes    map[UserID]Point
-	Revealed bool
+	ID         int
+	Name       string
+	Link       string
+	RaisedBy   UserID
+	Votes      map[UserID]Point
+	Revealed   bool
+	CreatedAt  time.Time
+	RevealedAt time.Time
 }
 
 func (t *Ticket) CanReveal(userID UserID) error {
@@ -92,10 +95,12 @@ func (t *Ticket) Voted(userID UserID) bool {
 
 func NewTicket(ID int, name, link string, userID UserID) Ticket {
 	return Ticket{
-		ID:       ID,
-		Name:     name,
-		Link:     link,
-		RaisedBy: userID,
-		Votes:    make(map[UserID]Point),
+		ID:         ID,
+		Name:       name,
+		Link:       link,
+		RaisedBy:   userID,
+		Votes:      make(map[UserID]Point),
+		CreatedAt:  time.Now().UTC(),
+		RevealedAt: time.Time{},
 	}
 }

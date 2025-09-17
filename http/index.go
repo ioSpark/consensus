@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
 	"consensus/app"
@@ -30,10 +31,19 @@ func revealedHandler(
 ) (g.Node, error) {
 	userID := r.Context().Value(contextUser).(app.UserID)
 
+	// TODO: Make revealed partial func
+	tickets := repo.Tickets()
+	slices.SortStableFunc(tickets, func(a, b app.Ticket) int {
+		if a.RevealedAt.After(b.RevealedAt) {
+			return 1
+		}
+		return -1
+	})
+
 	// Return just the table if we're a HTMX request
 	if r.Header.Get("HX-Request") == "true" {
 		group := g.Group{}
-		for _, t := range repo.Tickets() {
+		for _, t := range tickets {
 			if !t.Revealed {
 				continue
 			}
@@ -42,7 +52,7 @@ func revealedHandler(
 		}
 		return group, nil
 	}
-	return html.Revealed(html.PageProps{}, userID, repo.Tickets()), nil
+	return html.Revealed(html.PageProps{}, userID, tickets), nil
 }
 
 func newTicketHandler(

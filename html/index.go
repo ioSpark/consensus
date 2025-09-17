@@ -1,6 +1,8 @@
 package html
 
 import (
+	"slices"
+
 	"consensus/app"
 
 	g "maragu.dev/gomponents"
@@ -66,7 +68,13 @@ func Revealed(props PageProps, userID app.UserID, tickets []app.Ticket) g.Node {
 }
 
 func revealedTable(user app.UserID, tickets []app.Ticket) g.Node {
-	// TODO: Sort
+	slices.SortStableFunc(tickets, func(a, b app.Ticket) int {
+		if a.RevealedAt.After(b.RevealedAt) {
+			return 1
+		}
+		return -1
+	})
+
 	return gh.Table(
 		gh.Class("w-full border-separate border-spacing-y-1 border border-transparent"),
 
@@ -100,7 +108,13 @@ func ToPointPartial(
 	tickets []app.Ticket,
 	allUsers []app.UserID,
 ) g.Node {
-	// TODO: Sort
+	slices.SortStableFunc(tickets, func(a, b app.Ticket) int {
+		if a.CreatedAt.After(b.CreatedAt) {
+			return 1
+		}
+		return -1
+	})
+
 	return g.Group{
 		g.Map(tickets, func(t app.Ticket) g.Node {
 			if !t.Revealed {

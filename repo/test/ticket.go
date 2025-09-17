@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"time"
 
 	"consensus/app"
 )
@@ -45,6 +46,7 @@ func init() {
 	registerRepoTest("TicketDeleteNonExistent", testTicketDeleteNonExistent)
 	registerRepoTest("TicketCRUD", testTicketCRUD)
 	registerRepoTest("TicketCreateDuplicate", testTicketCreateDuplicate)
+	registerRepoTest("TicketTicketTime", testTicketTime)
 }
 
 func testTicketCRUD(t *testing.T, repo app.Repository) {
@@ -211,5 +213,36 @@ func testTicketNoLeakage(t *testing.T, repo app.Repository) {
 	}
 	if refetch.Name != "1" {
 		t.Errorf("ticket mutation leak %s, got %s", "1", refetch.Name)
+	}
+}
+
+func testTicketTime(t *testing.T, repo app.Repository) {
+	user := createUser(t, repo, "clock")
+
+	ticket := createTicket(t, repo, "whatever", *user)
+	if ticket.CreatedAt.Before(time.Now().Add(-1 * time.Minute)) {
+		t.Errorf("CreatedAt time is more than a minute old: %v", ticket.CreatedAt)
+	}
+
+	_, err := repo.Vote(ticket.ID, *user, 1)
+	if err != nil {
+		t.Fatalf("could not vote: %v", err)
+	}
+
+	revealed, err := repo.Reveal(ticket.ID, *user)
+	if err != nil {
+		t.Fatalf("could not reveal ticket: %v", err)
+	}
+
+	if ticket.CreatedAt != revealed.CreatedAt {
+		t.Errorf(
+			"CreatedAt time differs after revealing, %v, %v",
+			ticket.CreatedAt,
+			revealed.CreatedAt,
+		)
+	}
+
+	if revealed.RevealedAt.Before(time.Now().Add(-1 * time.Minute)) {
+		t.Errorf("RevealedAt time is more than a minute old: %v", ticket.RevealedAt)
 	}
 }
