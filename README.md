@@ -13,38 +13,10 @@ Status: MVP - Basic functionality implemented. Needs further refinement for UI/U
 - Show average/most frequent votes
 - Compact UI
 
-## TODO
+## Project Status
 
-Things to complete before changing the project status.
+Current progress towards stable is tracked via milestones.
 
-### Alpha
-
-Basic functionality that we are missing.
-
-- [ ] Persistence. Likely SQLite.
-- [ ] Display errors in UI
-- [ ] Ability to remove Tickets
-- [x] "Live" view so tickets update without refreshing
-
-### Beta
-
-Some extra features that we should have.
-
-- [ ] Customisation of voting values
-- [ ] "Question" voting value
-- [ ] Refine error handling
-- [ ] Basic functionality tests
-- [ ] Edit tickets
-
-### Stable
-
-- [ ] UI/UX refinement
-  - [ ] Smoother "live" view
-  - [ ] Ensure consistent order of tickets and other items
-- [ ] URL validation
-- [ ] Code cleanup (e.g. TODO items generally removed, idiomatic go, etc)
-
-### Unsure
-
-- [ ] Multi-tenancy
-- [ ] Integration with external ticket systems (e.g. Jira)
+- [ ] [Alpha](https://github.com/ioSpark/consensus/milestone/1)
+- [ ] [Beta](https://github.com/ioSpark/consensus/milestone/2)
+- [ ] [Stable](https://github.com/ioSpark/consensus/milestone/3)

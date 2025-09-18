@@ -30,7 +30,7 @@ func (s *Server) setupRoutes() {
 		r.Use(middleware.RequestID)
 		r.Use(middleware.Recoverer)
 
-		// TODO: Add cache busting middleware
+		// TODO: Add cache busting middleware. #1
 		Static(r)
 
 		Health(r)

@@ -19,7 +19,6 @@ func NewUser(raw string) UserID {
 type UserRepository interface {
 	User(ID string) (UserID, error)
 	Users() []UserID
-	// TODO: Should we accept parameters and create our own struct?
 	CreateUser(ID UserID) error
 	DeleteUser(ID UserID) error
 }

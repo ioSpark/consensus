@@ -62,6 +62,7 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 
 		gh.Td(
 			gh.Class("flex items-center gap-1 px-1"),
+			// TODO: Ensure users are ordered by name
 			g.Map(allUsers, func(u app.UserID) g.Node {
 				return gh.Span(gc.JoinAttrs(
 					"class",

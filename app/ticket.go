@@ -46,9 +46,6 @@ func (t *Ticket) CanReveal(userID UserID) error {
 	return nil
 }
 
-// TODO: Should these be methods? or just helper functions in template funcmap?
-//
-//	Perhaps if we introduce non-numbers?
 func (t *Ticket) Average() float64 {
 	total := 0
 	for _, v := range t.Votes {
