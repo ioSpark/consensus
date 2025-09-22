@@ -78,7 +78,7 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 				gc.JoinAttrs(
 					"class",
 					g.If(canReveal == nil, gh.Class("cursor-pointer")),
-					g.If(canReveal == nil, gh.Class("cursor-not-allowed")),
+					g.If(canReveal != nil, gh.Class("cursor-not-allowed")),
 					gh.Class(
 						"rounded bg-amber-100 px-1 hover:bg-amber-300 disabled:bg-slate-100 disabled:opacity-50",
 					),
