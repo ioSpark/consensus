@@ -47,6 +47,9 @@ func init() {
 	registerRepoTest("TicketCRUD", testTicketCRUD)
 	registerRepoTest("TicketCreateDuplicate", testTicketCreateDuplicate)
 	registerRepoTest("TicketTicketTime", testTicketTime)
+	registerRepoTest("TicketReveal", testTicketReveal)
+	registerRepoTest("TicketRevealNoVote", testTicketRevealNoVote)
+	registerRepoTest("TicketRevealBadUser", testTicketRevealBadUser)
 }
 
 func testTicketCRUD(t *testing.T, repo app.Repository) {
@@ -244,5 +247,72 @@ func testTicketTime(t *testing.T, repo app.Repository) {
 
 	if revealed.RevealedAt.Before(time.Now().Add(-1 * time.Minute)) {
 		t.Errorf("RevealedAt time is more than a minute old: %v", ticket.RevealedAt)
+	}
+}
+
+func testTicketReveal(t *testing.T, repo app.Repository) {
+	user := createUser(t, repo, "reveal")
+	ticket := createTicket(t, repo, "reveal", *user)
+
+	_, err := repo.Vote(ticket.ID, *user, 2)
+	if err != nil {
+		t.Fatalf("could not vote: %v", err)
+	}
+	revealedTicket, err := repo.Reveal(ticket.ID, *user)
+	if err != nil {
+		t.Fatalf("reveal ticket: %v", err)
+	}
+	if !revealedTicket.Revealed {
+		t.Errorf("revealed ticket returned as not revealed")
+	}
+
+	renewedTicket, err := repo.Ticket(ticket.ID)
+	if err != nil {
+		t.Errorf("retrieve ticket: %v", err)
+	}
+
+	if !renewedTicket.Revealed {
+		t.Errorf("ticket was revealed but repo returned: %v", renewedTicket.Revealed)
+	}
+}
+
+func testTicketRevealNoVote(t *testing.T, repo app.Repository) {
+	user := createUser(t, repo, "reveal")
+	ticket := createTicket(t, repo, "reveal", *user)
+
+	_, err := repo.Reveal(ticket.ID, *user)
+	if err == nil {
+		t.Fatalf("reveal with no votes did not fail")
+	} else if !errors.Is(err, app.ErrCantRevealNoVotes) {
+		t.Errorf("expected ErrCantRevealNoVotes, got %v", err)
+	}
+
+	// Verify it works after voting
+	_, err = repo.Vote(ticket.ID, *user, 2)
+	if err != nil {
+		t.Errorf("could not reveal even after voting")
+	}
+}
+
+func testTicketRevealBadUser(t *testing.T, repo app.Repository) {
+	user := createUser(t, repo, "reveal")
+	badUser := createUser(t, repo, "bad-user")
+	ticket := createTicket(t, repo, "reveal", *user)
+
+	_, err := repo.Reveal(ticket.ID, *badUser)
+	if err == nil {
+		t.Fatalf("reveal with non-reporter user did not fail")
+	} else if !errors.Is(err, app.ErrUserCantReveal) {
+		t.Errorf("expected ErrUserCantReveal, got %v", err)
+	}
+
+	// Verify that reveal works as expected
+	_, err = repo.Vote(ticket.ID, *user, 2)
+	if err != nil {
+		t.Fatalf("vote failed: %v", err)
+	}
+	_, err = repo.Reveal(ticket.ID, *user)
+	if err != nil {
+		t.Errorf("could not reveal even after voting")
 	}
 }
