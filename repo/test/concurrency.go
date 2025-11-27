@@ -95,16 +95,18 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 	close(start)
 	wg.Wait()
 
+	allTickets := repo.Tickets()
+
 	// Invariant checks
 	seenIDs := make(map[int]struct{})
-	for _, ticket := range repo.Tickets() {
+	for _, ticket := range allTickets {
 		if _, dup := seenIDs[ticket.ID]; dup {
 			t.Errorf("duplicate ticket ID: %d", ticket.ID)
 		}
 		seenIDs[ticket.ID] = struct{}{}
 
 		// Verify name/link uniqueness
-		for _, other := range repo.Tickets() {
+		for _, other := range allTickets {
 			if ticket.ID == other.ID {
 				continue
 			}
