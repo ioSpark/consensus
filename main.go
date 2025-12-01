@@ -78,15 +78,18 @@ func cli(log *slog.Logger) (app.Repository, error) {
 	var repo app.Repository
 	switch repoType {
 	case "memory":
+		log.Info("Using in-memory repository")
 		repo = memory.NewRepository()
 	case "bbolt":
 		dbPath := filepath.Join(storageDir, "consensus.db")
+		log.Info("Using bbolt DB", "path", dbPath)
 
 		bboltRepo, err := bbolt.NewRepository(dbPath, bbolt.RepositoryOptions{Log: log})
 		if err != nil {
 			return nil, err
 		}
 
+		log.Debug("Initialising bbolt DB")
 		err = bboltRepo.Initialise()
 		if err != nil {
 			return nil, fmt.Errorf("intialising bbolt repo: %w", err)
