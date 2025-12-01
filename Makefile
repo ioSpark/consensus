@@ -22,12 +22,12 @@ tailwind:
 tailwind-watch:
 	tailwindcss -i config.css -o http/static/style.css --watch
 
-.PHONY: build-binary
+.PHONY: build
 build:
-	go build -o consensus
+	goreleaser build --snapshot --single-target --clean --output ./consensus
 
 .PHONY: run-binary
-run-binary: build-binary
+run-binary: build
 	./consensus
 
 .PHONY: run

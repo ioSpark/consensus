@@ -10,6 +10,8 @@ builds:
   goarch:
   - amd64
   - arm64
+  ldflags:
+    - -s -w -X consensus/build.Version={{.RawVersion}} -X consensus/build.Repo=https://github.com/ioSpark/consensus
 
 dockers:
 - image_templates:

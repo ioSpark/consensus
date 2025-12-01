@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"consensus/app"
+	"consensus/build"
 
 	g "maragu.dev/gomponents"
 	gc "maragu.dev/gomponents/components"
@@ -28,10 +29,13 @@ func page(props PageProps, userID app.UserID, children ...g.Node) g.Node {
 		},
 		Body: []g.Node{
 			gh.Class(
-				"bg-linear-to-br m-auto max-w-max from-amber-200 to-teal-300 bg-fixed",
+				"bg-linear-to-br m-auto max-w-max from-amber-200 to-teal-300 bg-fixed min-h-screen flex flex-col",
 			),
 			header(userID),
-			g.Group(children),
+			gh.Main(
+				gh.Class("flex flex-col flex-1"),
+				g.Group(children),
+			),
 			footer(),
 		},
 	})
@@ -64,7 +68,35 @@ func header(u app.UserID) g.Node {
 }
 
 func footer() g.Node {
-	return gh.Footer(gh.Class("h-[25vh]"))
+	commitLink := fmt.Sprintf("%s/commit/%s", build.Repo, build.Commit)
+	releaseLink := fmt.Sprintf("%s/releases/tag/%s", build.Repo, build.Version)
+
+	return gh.Div(
+		gh.Div(gh.Class("h-[25vh]")),
+
+		// 0.3.1 (abcdef1)
+		// 0.3.1 (abcdef1) DIRTY
+		gh.Footer(
+			gh.Class(
+				"border-t-1 border-x-1 border-emerald-400 bg-emerald-300 sticky bottom-0 text-right",
+			),
+			gh.Span(
+				gh.Class("text-blue-600 pr-1 underline"),
+				gh.A(g.Text(build.Version), gh.Href(releaseLink)),
+			),
+			gh.Span(
+				gh.Class("pr-1"),
+				g.Text("("),
+				gh.A(
+					gh.Class("text-blue-600 underline"),
+					g.Text(build.CommitShort),
+					gh.Href(commitLink),
+				),
+				g.Text(")"),
+			),
+			g.If(build.Modified, gh.Span(gh.Class("pr-1"), g.Text("DIRTY"))),
+		),
+	)
 }
 
 func userImage(ID app.UserID, includeName bool) g.Node {
