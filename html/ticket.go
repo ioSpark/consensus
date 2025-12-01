@@ -224,12 +224,12 @@ func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
 				return gh.Div(
 					gc.JoinAttrs(
 						"class",
-						gh.Class("flex justify-end gap-2"),
+						gh.Class("flex justify-end gap-1"),
 						g.If(v.User == userID, gh.Class("font-bold")),
 					),
 					gh.Span(userImage(v.User, true)),
 					gh.Span(
-						gh.Class("font-mono"),
+						gh.Class("font-mono w-[2ch]"),
 						g.Textf("%d", v.Value),
 					),
 				)
@@ -238,15 +238,18 @@ func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
 
 		gh.Td(
 			gh.Class("px-1 font-mono"),
-			g.Text(strconv.FormatFloat(t.Average(), 'f', -1, 64)),
+			gh.Div(
+				gh.Class("flex place-content-center"),
+				g.Text(strconv.FormatFloat(t.Average(), 'f', -1, 64)),
+			),
 		),
 
 		gh.Td(
-			gh.Class("px-1 font-mono"),
+			gh.Class("px-1 font-mono w-[2ch]"),
 			gh.Div(
-				gh.Class("flex place-content-center gap-1"),
+				gh.Class("flex flex-col place-content-center"),
 				g.Map(t.Mode(), func(p app.Point) g.Node {
-					return gh.Span(g.Textf("%d", p))
+					return gh.Span(gh.Class("self-center"), g.Textf("%d", p))
 				}),
 			),
 		),
