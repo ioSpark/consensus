@@ -23,12 +23,12 @@ func testUserCRUD(t *testing.T, repo app.Repository) {
 	}
 
 	// TODO: CreateUser is inconsistent with CreateTicket
-	u1 := app.UserID("1")
+	u1 := app.NewUser("1")
 	err := repo.CreateUser(u1)
 	if err != nil {
 		t.Fatalf("create user1 failed: %v", err)
 	}
-	u2 := app.UserID("2")
+	u2 := app.NewUser("2")
 	err = repo.CreateUser(u2)
 	if err != nil {
 		t.Fatalf("create user2 failed: %v", err)
@@ -62,7 +62,7 @@ func testUserCRUD(t *testing.T, repo app.Repository) {
 }
 
 func testUserDeleteNonExistent(t *testing.T, repo app.Repository) {
-	err := repo.DeleteUser(app.UserID("non-existent"))
+	err := repo.DeleteUser(app.NewUser("non-existent"))
 	if err == nil {
 		t.Fatal("expected non-existent user update to fail")
 	}
