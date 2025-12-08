@@ -15,6 +15,7 @@ import (
 
 func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 	canReveal := t.CanReveal(userID)
+	isOwner := t.RaisedBy == userID
 
 	return gh.Tr(
 		gh.Class(
@@ -45,7 +46,7 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 		gh.Td(
 			gh.Class("px-1"),
 			gh.Div(
-				gh.Class("flex justify-center gap-1"),
+				gh.Class("flex flex-wrap justify-center gap-1"),
 				g.Map(app.PointValues, func(v app.Point) g.Node {
 					userVote := t.Votes[userID]
 					voted := false
@@ -75,30 +76,34 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 		),
 
 		gh.Td(
-			gh.Class("px-1"),
-			gh.Button(
-				gc.JoinAttrs(
-					"class",
-					g.If(canReveal == nil, gh.Class("cursor-pointer")),
-					g.If(canReveal != nil, gh.Class("cursor-not-allowed")),
-					gh.Class(
-						"rounded bg-amber-100 px-1 hover:bg-amber-300 disabled:bg-slate-100 disabled:opacity-50",
+			gh.Div(
+				gh.Class("px-1 flex flex-wrap gap-1 justify-center"),
+				gh.Button(
+					gc.JoinAttrs(
+						"class",
+						g.If(canReveal == nil, gh.Class("cursor-pointer")),
+						g.If(canReveal != nil, gh.Class("cursor-not-allowed")),
+						gh.Class(
+							"rounded bg-amber-100 px-1 hover:bg-amber-300 disabled:bg-slate-100 disabled:opacity-50",
+						),
 					),
+
+					g.If(canReveal == nil, g.Group{
+						hx.Post(fmt.Sprintf("/ticket/%d/reveal", t.ID)),
+						hx.Target("closest tr"),
+						hx.Swap("outerHTML swap:1s"),
+						// A successful response is to remove this row
+						g.Attr(
+							"_",
+							"on htmx:afterOnLoad transition the closest <tr/> opacity to 0 over 1s",
+						),
+					}),
+					g.If(canReveal != nil, gh.Disabled()),
+
+					g.Text("Reveal"),
 				),
 
-				g.If(canReveal == nil, g.Group{
-					hx.Post(fmt.Sprintf("/ticket/%d/reveal", t.ID)),
-					hx.Target("closest tr"),
-					hx.Swap("outerHTML swap:1s"),
-					// A successful response is to remove this row
-					g.Attr(
-						"_",
-						"on htmx:afterOnLoad transition the closest <tr/> opacity to 0 over 1s",
-					),
-				}),
-				g.If(canReveal != nil, gh.Disabled()),
-
-				g.Text("Reveal"),
+				g.If(isOwner, deleteButton(t, userID)),
 			),
 		),
 	)
@@ -166,6 +171,8 @@ func InputRow(oob bool) g.Node {
 }
 
 func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
+	isOwner := t.RaisedBy == userID
+
 	type vote struct {
 		User  app.UserID
 		Value app.Point
@@ -253,6 +260,13 @@ func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
 				}),
 			),
 		),
+		gh.Td(
+			gh.Div(
+				gh.Class("px-1 flex flex-wrap gap-1 justify-center"),
+
+				g.If(isOwner, deleteButton(t, userID)),
+			),
+		),
 	)
 }
 
@@ -270,5 +284,34 @@ func voteButton(tickedID int, point app.Point, voted bool) g.Node {
 		hx.Target("closest tr"),
 
 		g.Textf("%d", point),
+	)
+}
+
+func deleteButton(t app.Ticket, u app.UserID) g.Node {
+	isOwner := t.RaisedBy == u
+
+	return gh.Button(
+		gc.JoinAttrs(
+			"class",
+			g.If(isOwner, gh.Class("cursor-pointer")),
+			g.If(!isOwner, gh.Class("cursor-not-allowed")),
+			gh.Class(
+				"rounded bg-red-200 px-1 hover:bg-red-400 disabled:bg-slate-100 disabled:opacity-50",
+			),
+		),
+
+		g.If(isOwner, g.Group{
+			hx.Delete(fmt.Sprintf("/ticket/%d", t.ID)),
+			hx.Target("closest tr"),
+			hx.Swap("outerHTML swap:1s"),
+			// A successful response is to remove this row
+			g.Attr(
+				"_",
+				"on htmx:afterOnLoad transition the closest <tr/> opacity to 0 over 1s",
+			),
+		}),
+		g.If(!isOwner, gh.Disabled()),
+
+		g.Text("Delete"),
 	)
 }

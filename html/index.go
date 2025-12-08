@@ -86,6 +86,7 @@ func revealedTable(user app.UserID, tickets []app.Ticket) g.Node {
 				gh.Th(g.Text("Voters")),
 				gh.Th(g.Text("Avg")),
 				gh.Th(g.Text("Mode")),
+				gh.Th(),
 			),
 		),
 

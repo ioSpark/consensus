@@ -78,6 +78,38 @@ func revealPointsHandler(
 	return g.Group{}, nil
 }
 
+func ticketDelete(
+	w http.ResponseWriter,
+	r *http.Request,
+	repo app.Repository,
+) (g.Node, error) {
+	userID := r.Context().Value(contextUser).(app.UserID)
+	ticket := r.Context().Value(contextTicket).(app.Ticket)
+
+	// TODO: Return HTMX error
+	if userID != ticket.RaisedBy {
+		return g.Text(
+				"user did not raise ticket, cannot delete",
+			), httpError{
+				http.StatusUnauthorized,
+			}
+	}
+
+	// TODO: Return HTMX error. Do we want to return the err as part of the msg?
+	err := repo.DeleteTicket(ticket.ID)
+	if err != nil {
+		return g.Textf(
+				"failed to delete ticket: %v",
+				err,
+			), httpError{
+				http.StatusInternalServerError,
+			}
+	}
+
+	// Blank response will delete the row
+	return g.Group{}, nil
+}
+
 func ticketCtx(repo app.Repository, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		IDstring := strings.TrimSpace(chi.URLParam(r, "ID"))
@@ -131,7 +163,7 @@ func Ticket(r chi.Router, s app.Repository) {
 
 			r.Put("/point/{value}", provideRepo(s, pointTicketHandler))
 			r.Post("/reveal", provideRepo(s, revealPointsHandler))
-			// r.Delete("/", deleteTicketHandler)
+			r.Delete("/", provideRepo(s, ticketDelete))
 		})
 	})
 }
