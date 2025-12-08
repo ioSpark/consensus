@@ -103,6 +103,7 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 					g.Text("Reveal"),
 				),
 
+				g.If(isOwner, rePointButton(t, userID)),
 				g.If(isOwner, deleteButton(t, userID)),
 			),
 		),
@@ -263,6 +264,7 @@ func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
 		gh.Td(
 			gh.Div(
 				gh.Class("px-1 flex flex-wrap gap-1 justify-center"),
+				g.If(isOwner, rePointButton(t, userID)),
 
 				g.If(isOwner, deleteButton(t, userID)),
 			),
@@ -313,5 +315,33 @@ func deleteButton(t app.Ticket, u app.UserID) g.Node {
 		g.If(!isOwner, gh.Disabled()),
 
 		g.Text("Delete"),
+	)
+}
+
+func rePointButton(t app.Ticket, u app.UserID) g.Node {
+	isPointed := len(t.Votes) > 0
+
+	return gh.Button(
+		gc.JoinAttrs(
+			"class",
+			g.If(isPointed, gh.Class("cursor-pointer")),
+			g.If(!isPointed, gh.Class("cursor-not-allowed")),
+			gh.Class(
+				"rounded bg-emerald-100 px-1 hover:bg-emerald-400 disabled:bg-slate-100 disabled:opacity-50",
+			),
+		),
+		g.If(!isPointed, gh.Disabled()),
+
+		g.If(isPointed, g.Group{
+			hx.Post(fmt.Sprintf("/ticket/%d/re-point", t.ID)),
+			hx.Target("closest tr"),
+			hx.Swap("outerHTML swap:1s"),
+			// A successful response is to remove this row
+			g.Attr(
+				"_",
+				"on htmx:afterOnLoad transition the closest <tr/> opacity to 0 over 1s",
+			),
+		}),
+		g.Text("Re-Point"),
 	)
 }

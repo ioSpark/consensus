@@ -110,6 +110,49 @@ func ticketDelete(
 	return g.Group{}, nil
 }
 
+func ticketRepoint(
+	w http.ResponseWriter,
+	r *http.Request,
+	repo app.Repository,
+) (g.Node, error) {
+	userID := r.Context().Value(contextUser).(app.UserID)
+	ticket := r.Context().Value(contextTicket).(app.Ticket)
+
+	// TODO: Return HTMX error
+	if userID != ticket.RaisedBy {
+		return g.Text(
+				"user did not raise ticket, cannot issue re-pointing",
+			), httpError{
+				http.StatusUnauthorized,
+			}
+	}
+
+	// TODO: Return HTMX error
+	err := repo.DeleteTicket(ticket.ID)
+	if err != nil {
+		return g.Text(
+				"could not delete ticket",
+			), httpError{
+				http.StatusInternalServerError,
+			}
+	}
+
+	_, err = repo.CreateTicket(ticket.Name, ticket.Link, userID)
+	if err != nil {
+		return g.Textf(
+				"could not re-create ticket: %v",
+				err,
+			), httpError{
+				http.StatusInternalServerError,
+			}
+	}
+
+	// Trigger front-end to re-load pending tickets
+	w.Header().Add("HX-Trigger", "newToPoint")
+	// Delete row by providing empty request
+	return g.Group{}, nil
+}
+
 func ticketCtx(repo app.Repository, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		IDstring := strings.TrimSpace(chi.URLParam(r, "ID"))
@@ -163,6 +206,7 @@ func Ticket(r chi.Router, s app.Repository) {
 
 			r.Put("/point/{value}", provideRepo(s, pointTicketHandler))
 			r.Post("/reveal", provideRepo(s, revealPointsHandler))
+			r.Post("/re-point", provideRepo(s, ticketRepoint))
 			r.Delete("/", provideRepo(s, ticketDelete))
 		})
 	})

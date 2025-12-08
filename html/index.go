@@ -37,7 +37,7 @@ func Index(
 			),
 			gh.TBody(
 				gh.ID("tickets"),
-				hx.Trigger("every 5s"),
+				hx.Trigger("newToPoint from:body, every 5s"),
 				hx.Get("/to-point"),
 				g.Attr("_", hyperscriptTable),
 				ToPointPartial(userID, tickets, users),
