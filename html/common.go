@@ -46,7 +46,7 @@ func header(u app.UserID) g.Node {
 		gh.Class("flex justify-between"),
 		gh.H1(gh.Class("text-3xl font-bold"), g.Text("Consensus")),
 		gh.Div(
-			gh.Class("flex flex-col items-end"),
+			gh.Class("flex flex-row items-center"),
 			gh.Span(
 				gc.JoinAttrs(
 					"class",
