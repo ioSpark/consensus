@@ -21,13 +21,16 @@ func ticketFromBucket(id int, b *bolt.Bucket) (app.Ticket, error) {
 
 	var err error
 
-	ticket.CreatedAt, err = time.Parse(time.RFC3339, string(b.Get([]byte("createdAt"))))
+	ticket.CreatedAt, err = time.Parse(
+		time.RFC3339Nano,
+		string(b.Get([]byte("createdAt"))),
+	)
 	if err != nil {
 		return app.Ticket{}, fmt.Errorf("parsing CreatedAt time: %v", err)
 	}
 
 	ticket.RevealedAt, err = time.Parse(
-		time.RFC3339,
+		time.RFC3339Nano,
 		string(b.Get([]byte("revealedAt"))),
 	)
 	if err != nil {
@@ -104,14 +107,14 @@ func ticketToBucket(ticket app.Ticket, b *bolt.Bucket) error {
 
 	err = b.Put(
 		[]byte("createdAt"),
-		[]byte(ticket.CreatedAt.UTC().Format(time.RFC3339)),
+		[]byte(ticket.CreatedAt.UTC().Format(time.RFC3339Nano)),
 	)
 	if err != nil {
 		return fmt.Errorf("storing created at time to DB: %w", err)
 	}
 	err = b.Put(
 		[]byte("revealedAt"),
-		[]byte(ticket.RevealedAt.UTC().Format(time.RFC3339)),
+		[]byte(ticket.RevealedAt.UTC().Format(time.RFC3339Nano)),
 	)
 	if err != nil {
 		return fmt.Errorf("storing revealed at time to DB: %w", err)
