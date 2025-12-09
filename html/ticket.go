@@ -45,20 +45,29 @@ func TicketRow(t app.Ticket, userID app.UserID, allUsers []app.UserID) g.Node {
 
 		gh.Td(
 			gh.Class("px-1"),
-			gh.Div(
-				gh.Class("flex flex-wrap justify-center gap-1"),
-				g.Map(app.PointValues, func(v app.Point) g.Node {
-					userVote := t.Votes[userID]
-					voted := false
-					if userVote == v {
-						voted = true
-					} else {
-						voted = false
-					}
+			gh.Div(gh.Class("group relative"),
+				gh.Div(gc.JoinAttrs(
+					"class",
+					g.If(!t.Voted(userID), gh.Class("hidden")),
+					gh.Class(
+						"z-10 inset-0 absolute bg-radial-[at_50%_0%] from-emerald-400 to-emerald-500 opacity-100 rounded duration-300 transition-opacity ease-out shadow-md/40 group-hover:opacity-0 htmx-swapping:opacity-0 group-hover:pointer-events-none",
+					)),
+				),
 
-					return voteButton(t.ID, v, voted)
-				}),
-			),
+				gh.Div(
+					gh.Class("flex flex-wrap justify-center gap-1"),
+					g.Map(app.PointValues, func(v app.Point) g.Node {
+						userVote := t.Votes[userID]
+						voted := false
+						if userVote == v {
+							voted = true
+						} else {
+							voted = false
+						}
+
+						return voteButton(t.ID, v, voted)
+					}),
+				)),
 		),
 
 		gh.Td(
