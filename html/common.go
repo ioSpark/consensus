@@ -29,7 +29,7 @@ func page(props PageProps, userID app.UserID, children ...g.Node) g.Node {
 		},
 		Body: []g.Node{
 			gh.Class(
-				"bg-linear-to-br m-auto max-w-max from-amber-200 to-teal-300 bg-fixed min-h-screen flex flex-col",
+				"bg-radial-[at_50%_0%] m-auto max-w-max from-amber-200 to-teal-300 bg-fixed min-h-screen flex flex-col",
 			),
 			header(userID),
 			gh.Main(
