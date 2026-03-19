@@ -20,6 +20,7 @@ repos:
     name: Generate tailwind CSS
     language: system
     entry: tailwindcss -i config.css -o http/static/style.css
+    files: ^html/.*
     pass_filenames: false
 - repo: https://github.com/golangci/golangci-lint
   rev: v2.3.1
