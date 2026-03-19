@@ -3,7 +3,6 @@ package html
 import (
 	"fmt"
 	"slices"
-	"strconv"
 
 	"consensus/app"
 
@@ -257,7 +256,7 @@ func RevealedRow(t app.Ticket, userID app.UserID) g.Node {
 			gh.Class("px-1 font-mono"),
 			gh.Div(
 				gh.Class("flex place-content-center"),
-				g.Text(strconv.FormatFloat(t.Average(), 'f', -1, 64)),
+				g.Text(app.NumberFmt(t.Average())),
 			),
 		),
 
