@@ -44,7 +44,10 @@ func page(props PageProps, userID app.UserID, children ...g.Node) g.Node {
 func header(u app.UserID) g.Node {
 	return gh.Header(
 		gh.Class("flex justify-between"),
-		gh.H1(gh.Class("text-3xl font-bold"), g.Text("Consensus")),
+		gh.H1(
+			gh.Class("text-3xl font-bold hover:underline hover:text-blue-600"),
+			gh.A(g.Text("Consensus"), gh.Href("/")),
+		),
 		gh.Div(
 			gh.Class("flex flex-row items-center"),
 			gh.Span(
