@@ -65,7 +65,10 @@ func cli(log *slog.Logger) (app.Repository, error) {
 	if repoType == "" {
 		return nil, fmt.Errorf("--repo or REPO_TYPE not specified")
 	} else if repoType != "memory" && repoType != "bbolt" {
-		return nil, fmt.Errorf("invalid repo type, expected 'bbolt' or 'memory' got: %s", repoType)
+		return nil, fmt.Errorf(
+			"invalid repo type, expected 'bbolt' or 'memory' got: %s",
+			repoType,
+		)
 	}
 
 	if storageDir == "" {

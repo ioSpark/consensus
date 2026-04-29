@@ -67,7 +67,11 @@ func revealPointsHandler(
 				http.StatusUnauthorized,
 			}
 	} else if err == app.ErrCantRevealNoVotes {
-		return g.Text("no votes on ticket, cannot reveal"), httpError{http.StatusBadRequest}
+		return g.Text(
+				"no votes on ticket, cannot reveal",
+			), httpError{
+				http.StatusBadRequest,
+			}
 	} else if err != nil {
 		panic(err)
 	}
