@@ -1,12 +1,29 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices"
+    "config:best-practices",
+    ":disableRateLimiting",
+    "schedule:weekly",
+    "group:allDigest"
   ],
 
   "commitMessagePrefix": "⬆️",
 
   "pre-commit": {
     "enabled": true
-  }
+  },
+
+  "packageRules": [
+    {
+      "groupName": "{{manager}} non-major dependencies",
+      "groupSlug": "{{manager}}-minor-patch",
+      "matchPackageNames": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    }
+  ]
 }
