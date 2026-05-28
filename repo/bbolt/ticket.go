@@ -306,16 +306,13 @@ func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	return ticket, nil
 }
 
-func (r *Repository) CreateTicket(
-	name, link string,
-	user app.UserID,
-) (app.Ticket, error) {
+func (r *Repository) CreateTicket(params app.TicketParams) (app.Ticket, error) {
 	var ticket app.Ticket
 
 	err := r.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("ticket"))
 
-		userBucket := tx.Bucket([]byte("user")).Get([]byte(user))
+		userBucket := tx.Bucket([]byte("user")).Get([]byte(params.RaisedBy))
 		if userBucket == nil {
 			return app.ErrUserNotExist
 		}
@@ -327,8 +324,8 @@ func (r *Repository) CreateTicket(
 			ticketName := string(ticketBucket.Get([]byte("name")))
 			ticketLink := string(ticketBucket.Get([]byte("link")))
 
-			if strings.EqualFold(ticketName, name) ||
-				strings.EqualFold(ticketLink, link) {
+			if strings.EqualFold(ticketName, params.Name) ||
+				strings.EqualFold(ticketLink, params.Link) {
 				return app.ErrTicketAlreadyExists
 			}
 
@@ -339,19 +336,14 @@ func (r *Repository) CreateTicket(
 		}
 
 		id, _ := b.NextSequence()
-		t := app.NewTicket(int(id), name, link, user)
+		ticket = app.NewTicket(int(id), params)
 
 		ticketBucket, err := b.CreateBucket(itob(id))
 		if err != nil {
 			panic(err)
 		}
 
-		err = ticketToBucket(t, ticketBucket)
-		if err != nil {
-			panic(err)
-		}
-
-		ticket, err = ticketFromBucket(t.ID, ticketBucket)
+		err = ticketToBucket(ticket, ticketBucket)
 		if err != nil {
 			panic(err)
 		}
@@ -389,25 +381,14 @@ func (r *Repository) DeleteTicket(id int) error {
 	return nil
 }
 
-func (r *Repository) UpdateTicket(id int, name, link string) (app.Ticket, error) {
-	var ticket app.Ticket
-
+func (r *Repository) UpdateTicket(ticket app.Ticket) error {
 	err := r.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("ticket")).Bucket(itob(id))
+		b := tx.Bucket([]byte("ticket")).Bucket(itob(ticket.ID))
 		if b == nil {
 			return app.ErrTicketNotExist
 		}
 
-		var err error
-		ticket, err = ticketFromBucket(id, b)
-		if err != nil {
-			panic(err)
-		}
-
-		ticket.Name = name
-		ticket.Link = link
-
-		err = ticketToBucket(ticket, b)
+		err := ticketToBucket(ticket, b)
 		if err != nil {
 			panic(err)
 		}
@@ -416,10 +397,10 @@ func (r *Repository) UpdateTicket(id int, name, link string) (app.Ticket, error)
 	})
 
 	if errors.Is(err, app.ErrTicketNotExist) {
-		return app.Ticket{}, err
+		return err
 	} else if err != nil {
-		return app.Ticket{}, nil
+		return fmt.Errorf("update ticket: %v", err)
 	}
 
-	return ticket, nil
+	return nil
 }

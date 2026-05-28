@@ -21,13 +21,12 @@ type TicketRepository interface {
 	Vote(ID int, user UserID, value int) (Ticket, error)
 	Reveal(ID int, user UserID) (Ticket, error)
 
-	CreateTicket(name, link string, user UserID) (Ticket, error)
+	CreateTicket(TicketParams) (Ticket, error)
 	DeleteTicket(ID int) error
-	UpdateTicket(ID int, name, link string) (Ticket, error)
+	UpdateTicket(Ticket) error
 }
 
-type Ticket struct {
-	ID         int
+type TicketParams struct {
 	Name       string
 	Link       string
 	RaisedBy   UserID
@@ -35,6 +34,11 @@ type Ticket struct {
 	Revealed   bool
 	CreatedAt  time.Time
 	RevealedAt time.Time
+}
+
+type Ticket struct {
+	ID int
+	TicketParams
 }
 
 func (t *Ticket) CanReveal(userID UserID) error {
@@ -90,14 +94,20 @@ func (t *Ticket) Voted(userID UserID) bool {
 	return ok
 }
 
-func NewTicket(ID int, name, link string, userID UserID) Ticket {
-	return Ticket{
-		ID:         ID,
+func NewTicketParams(name, link string, userID UserID) TicketParams {
+	return TicketParams{
 		Name:       name,
 		Link:       link,
 		RaisedBy:   userID,
 		Votes:      make(map[UserID]Point),
 		CreatedAt:  time.Now().UTC(),
 		RevealedAt: time.Time{},
+	}
+}
+
+func NewTicket(ID int, params TicketParams) Ticket {
+	return Ticket{
+		ID:           ID,
+		TicketParams: params,
 	}
 }

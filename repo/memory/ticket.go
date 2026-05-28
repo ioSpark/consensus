@@ -113,14 +113,11 @@ func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
-func (r *Repository) CreateTicket(
-	name, link string,
-	user app.UserID,
-) (app.Ticket, error) {
+func (r *Repository) CreateTicket(params app.TicketParams) (app.Ticket, error) {
 	r.Lock()
 	defer r.Unlock()
 
-	_, err := r.userWithoutLock(string(user))
+	_, err := r.userWithoutLock(string(params.RaisedBy))
 	if err != nil {
 		if errors.Is(err, app.ErrUserNotExist) {
 			return app.Ticket{}, err
@@ -130,10 +127,10 @@ func (r *Repository) CreateTicket(
 	}
 
 	if slices.ContainsFunc(r.tickets, func(t app.Ticket) bool {
-		if strings.EqualFold(t.Name, name) {
+		if strings.EqualFold(t.Name, params.Name) {
 			return true
 		}
-		return strings.EqualFold(t.Link, link)
+		return strings.EqualFold(t.Link, params.Link)
 	}) {
 		return app.Ticket{}, app.ErrTicketAlreadyExists
 	}
@@ -151,7 +148,7 @@ func (r *Repository) CreateTicket(
 		}
 	}
 
-	ticket := app.NewTicket(newID, name, link, user)
+	ticket := app.NewTicket(newID, params)
 
 	r.tickets = append(r.tickets, ticket)
 	return cloneTicket(ticket), nil
@@ -210,17 +207,15 @@ func (r *Repository) updateTicketWithoutLock(ticket app.Ticket) (app.Ticket, err
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
-func (r *Repository) UpdateTicket(ID int, name, link string) (app.Ticket, error) {
+func (r *Repository) UpdateTicket(ticket app.Ticket) error {
 	r.Lock()
 	defer r.Unlock()
 
-	ticket, err := r.ticketWithoutLock(ID)
+	_, err := r.ticketWithoutLock(ticket.ID)
 	if err != nil {
-		return app.Ticket{}, err
+		return err
 	}
 
-	ticket.Name = name
-	ticket.Link = link
-
-	return r.updateTicketWithoutLock(ticket)
+	_, err = r.updateTicketWithoutLock(ticket)
+	return err
 }

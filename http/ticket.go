@@ -141,7 +141,8 @@ func ticketRepoint(
 			}
 	}
 
-	_, err = repo.CreateTicket(ticket.Name, ticket.Link, userID)
+	params := app.NewTicketParams(ticket.Name, ticket.Link, userID)
+	_, err = repo.CreateTicket(params)
 	if err != nil {
 		return g.Textf(
 				"could not re-create ticket: %v",

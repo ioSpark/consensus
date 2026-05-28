@@ -30,7 +30,8 @@ func createTicket(
 ) *app.Ticket {
 	t.Helper()
 
-	ticket, err := repo.CreateTicket(name, "http://whatever"+name, user)
+	params := app.NewTicketParams(name, "http://whatever"+name, user)
+	ticket, err := repo.CreateTicket(params)
 	if err != nil {
 		t.Errorf("CreateTicket failed: %v", err)
 	}
@@ -81,9 +82,16 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 	}
 
 	newName := "i am renaming myself to Ticket Prime"
-	updated, err := repo.UpdateTicket(t1.ID, newName, t1.Link)
+	updatedTicket := *t1
+	updatedTicket.Name = newName
+	err = repo.UpdateTicket(updatedTicket)
 	if err != nil {
 		t.Fatalf("error updating ticket with new name: %v", err)
+	}
+
+	updated, err := repo.Ticket(t1.ID)
+	if err != nil {
+		t.Fatalf("could not retrieve ticket after updating")
 	}
 	if updated.Name != newName {
 		t.Fatalf(
@@ -115,7 +123,7 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 }
 
 func testTicketCreateUserNotExist(t *testing.T, repo app.Repository) {
-	_, err := repo.CreateTicket("test", "test", app.NewUser("1"))
+	_, err := repo.CreateTicket(app.NewTicketParams("test", "test", app.NewUser("1")))
 	if err == nil {
 		t.Errorf("expected create ticket to fail")
 	} else if !errors.Is(err, app.ErrUserNotExist) {
@@ -131,7 +139,7 @@ func testTicketCreateGenerateUniqueIDs(t *testing.T, repo app.Repository) {
 	const n = 8192
 	for i := range n {
 		num := fmt.Sprintf("%d", i)
-		tk, err := repo.CreateTicket(num, "whatever-"+num, *user)
+		tk, err := repo.CreateTicket(app.NewTicketParams(num, "whatever-"+num, *user))
 		if err != nil {
 			t.Fatalf("create ticket failed: %v", err)
 		}
@@ -152,26 +160,30 @@ func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	name := "initial"
 	link := "whatever"
 
-	_, err := repo.CreateTicket(name, link, *user)
+	_, err := repo.CreateTicket(app.NewTicketParams(name, link, *user))
 	if err != nil {
 		t.Errorf("CreateTicket failed: %v", err)
 	}
 
-	_, err = repo.CreateTicket(name, link, *user)
+	_, err = repo.CreateTicket(app.NewTicketParams(name, link, *user))
 	if err == nil {
 		t.Errorf("expected duplicate ticket creation to fail")
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
 		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
 	}
 
-	_, err = repo.CreateTicket("never before seen name", link, *user)
+	_, err = repo.CreateTicket(
+		app.NewTicketParams("never before seen name", link, *user),
+	)
 	if err == nil {
 		t.Errorf("expected duplicate ticket creation to fail")
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
 		t.Fatalf("expected ErrTicketAlreadyExists, got %v", err)
 	}
 
-	_, err = repo.CreateTicket(name, "never before seen link", *user)
+	_, err = repo.CreateTicket(
+		app.NewTicketParams(name, "never before seen link", *user),
+	)
 	if err == nil {
 		t.Errorf("expected duplicate ticket creation to fail")
 	} else if !errors.Is(err, app.ErrTicketAlreadyExists) {
@@ -180,7 +192,7 @@ func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 }
 
 func testTicketUpdateNonExistent(t *testing.T, repo app.Repository) {
-	_, err := repo.UpdateTicket(9999, "whatever", "whatever")
+	err := repo.UpdateTicket(app.Ticket{ID: 9999})
 	if err == nil {
 		t.Fatal("expected non-existent ticket update to fail")
 	} else if !errors.Is(err, app.ErrTicketNotExist) {
