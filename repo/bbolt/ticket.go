@@ -3,6 +3,7 @@ package bbolt
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -306,8 +307,32 @@ func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	return ticket, nil
 }
 
+func validateTicketLink(link string) error {
+	if strings.TrimSpace(link) == "" {
+		return app.ErrInvalidTicketLink
+	}
+	u, err := url.ParseRequestURI(link)
+	if err != nil {
+		return app.ErrInvalidTicketLink
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https":
+		if u.Host == "" {
+			return app.ErrInvalidTicketLink
+		}
+		return nil
+	default:
+		return app.ErrInvalidTicketLink
+	}
+
+}
+
 func (r *Repository) CreateTicket(params app.TicketParams) (app.Ticket, error) {
 	var ticket app.Ticket
+
+	if err := validateTicketLink(params.Link); err != nil {
+		return app.Ticket{}, app.ErrInvalidTicketLink
+	}
 
 	err := r.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("ticket"))

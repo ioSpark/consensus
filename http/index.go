@@ -70,6 +70,13 @@ func newTicketHandler(
 	userID := r.Context().Value(contextUser).(app.UserID)
 	params := app.NewTicketParams(title, link, userID)
 	_, err := repo.CreateTicket(params)
+	if err == app.ErrInvalidTicketLink {
+		return g.Text(
+				"please add valid ticket URL",
+			), httpError{
+				http.StatusBadRequest,
+			}
+	}
 	if err == app.ErrTicketAlreadyExists {
 		// TODO: HTMX error
 		// TODO: Might not need to exist, since all tickets are based on ID

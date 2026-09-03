@@ -11,6 +11,7 @@ var (
 	ErrTicketAlreadyExists = fmt.Errorf("ticket with name already exists")
 	ErrTicketNotExist      = fmt.Errorf("ticket does not exist")
 	ErrUserCantReveal      = fmt.Errorf("user did not raise ticket, cannot reveal")
+	ErrInvalidTicketLink   = fmt.Errorf("please add valid Ticket URL")
 )
 
 type TicketRepository interface {
