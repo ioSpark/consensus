@@ -4,6 +4,7 @@ import (
 	"errors"
 	"maps"
 	"math/rand/v2"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -113,6 +114,25 @@ func (r *Repository) TicketByName(name string) (app.Ticket, error) {
 	return app.Ticket{}, app.ErrTicketNotExist
 }
 
+func validateTicketLink(link string) error {
+	if strings.TrimSpace(link) == "" {
+		return app.ErrInvalidTicketLink
+	}
+	u, err := url.ParseRequestURI(link)
+	if err != nil {
+		return app.ErrInvalidTicketLink
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https":
+		if u.Host == "" {
+			return app.ErrInvalidTicketLink
+		}
+		return nil
+	default:
+		return app.ErrInvalidTicketLink
+	}
+}
+
 func (r *Repository) CreateTicket(params app.TicketParams) (app.Ticket, error) {
 	r.Lock()
 	defer r.Unlock()
@@ -133,6 +153,11 @@ func (r *Repository) CreateTicket(params app.TicketParams) (app.Ticket, error) {
 		return strings.EqualFold(t.Link, params.Link)
 	}) {
 		return app.Ticket{}, app.ErrTicketAlreadyExists
+	}
+
+	// Validate Ticket URL
+	if err := validateTicketLink(params.Link); err != nil {
+		return app.Ticket{}, app.ErrInvalidTicketLink
 	}
 
 	// Generate un-used ID

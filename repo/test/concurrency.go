@@ -17,6 +17,7 @@ func init() {
 }
 
 func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
+	link := "http://dummy.com"
 	const userCount = 16
 	// Seed users
 	users := make([]app.UserID, userCount)
@@ -26,7 +27,7 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 	}
 
 	// Seed a single user, so that we can pick a random ticket
-	_ = createTicket(t, repo, "seed", users[0])
+	_ = createTicket(t, repo, "seed", link, users[0])
 
 	workers := runtime.NumCPU() * 2
 	// Perhaps worth making this configurable (somehow). Or perhaps exposing a more
@@ -47,7 +48,7 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 				switch rand.IntN(4) {
 				case 0: // Create ticket
 					name := fmt.Sprintf("ticket-w%d-%d", ID, i)
-					link := fmt.Sprintf("whatever-w%d-%d", ID, i)
+					link := fmt.Sprintf("http://whatever-w%d-%d.com", ID, i)
 					_, err := repo.CreateTicket(
 						app.NewTicketParams(name, link, rngUser),
 					)
@@ -58,7 +59,7 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 					tickets := repo.Tickets()
 					rngTicket := tickets[rand.IntN(len(tickets))]
 					rngTicket.Name = fmt.Sprintf("updated by w-%d-%d", ID, i)
-					rngTicket.Link = fmt.Sprintf("link w-%d-%d", ID, i)
+					rngTicket.Link = fmt.Sprintf("http://link w-%d-%d.com", ID, i)
 
 					err := repo.UpdateTicket(rngTicket)
 					if err != nil {
@@ -124,7 +125,7 @@ func testConcurrentTicketCRUD(t *testing.T, repo app.Repository) {
 
 func testConcurrentVoting(t *testing.T, repo app.Repository) {
 	reporter := createUser(t, repo, "reporter")
-	ticket := createTicket(t, repo, "ticket", *reporter)
+	ticket := createTicket(t, repo, "ticket", "http://dummy.org", *reporter)
 
 	const workers = 256
 	var userSequence atomic.Int64

@@ -26,11 +26,12 @@ func createTicket(
 	t *testing.T,
 	repo app.Repository,
 	name string,
+	link string,
 	user app.UserID,
 ) *app.Ticket {
 	t.Helper()
 
-	params := app.NewTicketParams(name, "http://whatever"+name, user)
+	params := app.NewTicketParams(name, link, user)
 	ticket, err := repo.CreateTicket(params)
 	if err != nil {
 		t.Errorf("CreateTicket failed: %v", err)
@@ -51,6 +52,7 @@ func init() {
 	registerRepoTest("TicketReveal", testTicketReveal)
 	registerRepoTest("TicketRevealNoVote", testTicketRevealNoVote)
 	registerRepoTest("TicketRevealBadUser", testTicketRevealBadUser)
+	registerRepoTest("TicketURLValidation", testTicketURLValidation)
 }
 
 func testTicketCRUD(t *testing.T, repo app.Repository) {
@@ -60,8 +62,8 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 
 	user := createUser(t, repo, "test")
 
-	t1 := createTicket(t, repo, "i am the first ticket", *user)
-	_ = createTicket(t, repo, "i am the second ticket", *user)
+	t1 := createTicket(t, repo, "i am the first ticket", "http://whatever1.com", *user)
+	_ = createTicket(t, repo, "i am the second ticket", "http://whatever2.com", *user)
 
 	if len(repo.Tickets()) != 2 {
 		t.Fatalf("expected 2 tickets: got %d", len(repo.Tickets()))
@@ -123,7 +125,7 @@ func testTicketCRUD(t *testing.T, repo app.Repository) {
 }
 
 func testTicketCreateUserNotExist(t *testing.T, repo app.Repository) {
-	_, err := repo.CreateTicket(app.NewTicketParams("test", "test", app.NewUser("1")))
+	_, err := repo.CreateTicket(app.NewTicketParams("test", "http://blah.com", app.NewUser("1")))
 	if err == nil {
 		t.Errorf("expected create ticket to fail")
 	} else if !errors.Is(err, app.ErrUserNotExist) {
@@ -139,7 +141,7 @@ func testTicketCreateGenerateUniqueIDs(t *testing.T, repo app.Repository) {
 	const n = 8192
 	for i := range n {
 		num := fmt.Sprintf("%d", i)
-		tk, err := repo.CreateTicket(app.NewTicketParams(num, "whatever-"+num, *user))
+		tk, err := repo.CreateTicket(app.NewTicketParams(num, "http://whatever-"+num+".com", *user))
 		if err != nil {
 			t.Fatalf("create ticket failed: %v", err)
 		}
@@ -158,7 +160,7 @@ func testTicketCreateDuplicate(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "1")
 
 	name := "initial"
-	link := "whatever"
+	link := "http://whatever.com"
 
 	_, err := repo.CreateTicket(app.NewTicketParams(name, link, *user))
 	if err != nil {
@@ -212,8 +214,8 @@ func testTicketDeleteNonExistent(t *testing.T, repo app.Repository) {
 func testTicketNoLeakage(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "test")
 
-	t1 := createTicket(t, repo, "1", *user)
-	_ = createTicket(t, repo, "2", *user)
+	t1 := createTicket(t, repo, "1", "http://whatever1.com", *user)
+	_ = createTicket(t, repo, "2", "http://whatever2.com", *user)
 
 	tickets := repo.Tickets()
 	if len(tickets) != 2 {
@@ -234,7 +236,7 @@ func testTicketNoLeakage(t *testing.T, repo app.Repository) {
 func testTicketTime(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "clock")
 
-	ticket := createTicket(t, repo, "whatever", *user)
+	ticket := createTicket(t, repo, "whatever", "http://whatever.com", *user)
 	if ticket.CreatedAt.Before(time.Now().Add(-1 * time.Minute)) {
 		t.Errorf("CreatedAt time is more than a minute old: %v", ticket.CreatedAt)
 	}
@@ -264,7 +266,7 @@ func testTicketTime(t *testing.T, repo app.Repository) {
 
 func testTicketReveal(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "reveal")
-	ticket := createTicket(t, repo, "reveal", *user)
+	ticket := createTicket(t, repo, "reveal", "http://whatever.com", *user)
 
 	_, err := repo.Vote(ticket.ID, *user, 2)
 	if err != nil {
@@ -290,7 +292,7 @@ func testTicketReveal(t *testing.T, repo app.Repository) {
 
 func testTicketRevealNoVote(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "reveal")
-	ticket := createTicket(t, repo, "reveal", *user)
+	ticket := createTicket(t, repo, "reveal", "http://whatever.com", *user)
 
 	_, err := repo.Reveal(ticket.ID, *user)
 	if err == nil {
@@ -309,7 +311,7 @@ func testTicketRevealNoVote(t *testing.T, repo app.Repository) {
 func testTicketRevealBadUser(t *testing.T, repo app.Repository) {
 	user := createUser(t, repo, "reveal")
 	badUser := createUser(t, repo, "bad-user")
-	ticket := createTicket(t, repo, "reveal", *user)
+	ticket := createTicket(t, repo, "reveal", "http://whatever.com", *user)
 
 	_, err := repo.Reveal(ticket.ID, *badUser)
 	if err == nil {
@@ -326,5 +328,22 @@ func testTicketRevealBadUser(t *testing.T, repo app.Repository) {
 	_, err = repo.Reveal(ticket.ID, *user)
 	if err != nil {
 		t.Errorf("could not reveal even after voting")
+	}
+}
+
+func testTicketURLValidation(t *testing.T, repo app.Repository) {
+	user := createUser(t, repo, "test")
+
+	_, err := repo.CreateTicket(app.NewTicketParams("blah-ticket", "blah://invalid link", *user))
+	if err == nil {
+		t.Fatalf("ticket URL must be valid")
+	} else if !errors.Is(err, app.ErrInvalidTicketLink) {
+		t.Errorf("expected ErrInvalidTicketLink, got %v", err)
+	}
+
+	// Verify that URL validation works as expected
+	_, err = repo.CreateTicket(app.NewTicketParams("ticket", "https://valid.com", *user))
+	if err != nil {
+		t.Errorf("expected valid ticket link to succeed, got %v", err)
 	}
 }
