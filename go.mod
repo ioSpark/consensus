@@ -3,7 +3,7 @@ module consensus
 go 1.25.0
 
 require (
-	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/chi/v5 v5.4.0
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/sync v0.20.0
 	maragu.dev/gomponents v1.3.0
